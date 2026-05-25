@@ -1,0 +1,116 @@
+<UserControl x:Class="SyslogHmi.Views.SqlAnalysisView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:converters="clr-namespace:SyslogHmi.Converters"
+             xmlns:views="clr-namespace:SyslogHmi.Views"
+             xmlns:vm="clr-namespace:SyslogHmi.ViewModels"
+             mc:Ignorable="d"
+             d:DesignWidth="1200" d:DesignHeight="800"
+             d:DataContext="{d:DesignInstance Type=vm:SqlAnalysisViewModel, IsDesignTimeCreatable=False}"
+             Background="#F5F6FA"
+             Loaded="UserControl_Loaded">
+
+    <UserControl.Resources>
+        <converters:StringToColorBrushConverter x:Key="StringToColorBrushConverter"/>
+        <converters:SingleLineConverter x:Key="SingleLineConverter" />
+        <converters:UtcToLocalConverter x:Key="UtcToLocalConverter" />
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Query Input Section -->
+        <Border Grid.Row="1" Background="White" BorderBrush="#E0E0E0" BorderThickness="0,1,0,1" Padding="15">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Query Label -->
+                <TextBlock Grid.Row="0" 
+                           Text="SQL Query:" 
+                           FontSize="12" 
+                           FontWeight="Bold" 
+                           Margin="0,0,0,5" 
+                           Foreground="#2D3436"/>
+
+                <!-- Query Input TextBox -->
+                <TextBox Grid.Row="1" 
+                         Text="{Binding QueryText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         Padding="12"
+                         Height="50"
+                         BorderBrush="#E0E0E0"
+                         BorderThickness="1"
+                         AcceptsReturn="True"
+                         VerticalScrollBarVisibility="Auto"
+                         HorizontalScrollBarVisibility="Auto"
+                         TextWrapping="Wrap"
+                         FontFamily="Consolas, Courier New"
+                         FontSize="11"
+                         Background="#F9F9F9"
+                         Margin="0,0,0,12"/>
+
+                <!-- Button Row -->
+                <StackPanel Grid.Row="2" 
+                            Orientation="Horizontal" 
+                            HorizontalAlignment="Left">
+
+                    <!-- Execute Button -->
+                    <Button Content="Execute Query" 
+                            Padding="15,10"
+                            Margin="0,0,10,0"
+                            Background="#27AE60" 
+                            Foreground="White"
+                            FontWeight="Bold"
+                            Command="{Binding ExecuteQueryCommand}"/>
+
+                    <!-- Clear Results Button -->
+                    <Button Content="Clear Results" 
+                            Padding="15,10"
+                            Margin="0,0,10,0"
+                            Background="#3498DB" 
+                            Foreground="White"
+                            FontWeight="Bold"
+                            Command="{Binding ClearResultsCommand}"/>
+
+                    <!-- Reset Query Button -->
+                    <Button Content="Reset Query" 
+                            Padding="15,10"
+                            Margin="0,0,20,0"
+                            Background="#E67E22" 
+                            Foreground="White"
+                            FontWeight="Bold"
+                            Command="{Binding ResetQueryCommand}"/>
+
+                    <!-- Status Message and Result Count -->
+                    <StackPanel Orientation="Horizontal" 
+                                VerticalAlignment="Center">
+                        <TextBlock Text="{Binding StatusMessage}" 
+                                   Foreground="#7F8C8D"
+                                   FontSize="11"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,20,0"/>
+
+                        <TextBlock VerticalAlignment="Center" FontWeight="Bold" Foreground="#27AE60">
+                            <Run Text="Results: "/>
+                            <Run Text="{Binding ResultCount}"/>
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Results Section - Embedded MessagesView -->
+        <Border Grid.Row="2" Background="White" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
+            <views:MessagesView/>
+        </Border>
+    </Grid>
+</UserControl>
