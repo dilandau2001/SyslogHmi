@@ -2,6 +2,8 @@
 
 A modern, feature-rich desktop application for monitoring, filtering, and analyzing syslog messages in real-time. Built with WPF and .NET 10, SyslogHmi provides a comprehensive graphical interface for receiving syslog messages over TCP and UDP protocols, storing them in a SQLite database, and managing visual formatting rules.
 
+<img width="1370" height="758" alt="image" src="https://github.com/user-attachments/assets/5918762b-0ac5-4ffc-a44a-00c28658e848" />
+
 ## Table of Contents
 
 - [Features](#features)
