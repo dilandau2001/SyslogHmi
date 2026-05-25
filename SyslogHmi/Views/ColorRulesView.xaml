@@ -36,8 +36,8 @@
 						<ColumnDefinition Width="*"/>
 						<ColumnDefinition Width="Auto"/>
 					</Grid.ColumnDefinitions>
-					<TextBlock Grid.Column="0" Text="Reglas de Color" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Foreground="#2D3436"/>
-					<Button Grid.Column="1" Content="+ Nueva" Background="#27AE60" Foreground="White" Padding="12,5" FontWeight="Bold" BorderThickness="0"
+					<TextBlock Grid.Column="0" Text="Coloring Rules" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Foreground="#2D3436"/>
+					<Button Grid.Column="1" Content="+ New Rule" Background="#27AE60" Foreground="White" Padding="12,5" FontWeight="Bold" BorderThickness="0"
 							Command="{Binding ColorRuleViewModel.NewRuleCommand}"/>
 				</Grid>
 
@@ -128,14 +128,14 @@
 							<ColumnDefinition Width="100"/>
 							<ColumnDefinition Width="*"/>
 						</Grid.ColumnDefinitions>
-						<TextBlock Grid.Column="0" Text="Nombre:" VerticalAlignment="Center" FontWeight="Bold"/>
+						<TextBlock Grid.Column="0" Text="Name:" VerticalAlignment="Center" FontWeight="Bold"/>
 						<TextBox Grid.Column="1" Text="{Binding RuleName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Padding="8" Margin="10,0,0,0"/>
 					</Grid>
 
 					<!-- ================= GRUPO 1: CONDICIONES DE FILTRADO (FILAS HORIZONTALES) ================= -->
 					<Border Grid.Row="2" Background="#FFFFFF" BorderBrush="#E0E0E0" BorderThickness="5" CornerRadius="4" Padding="15" Margin="0,0,0,20">
 						<StackPanel>
-							<TextBlock Text="Condiciones de Filtrado" FontSize="13" FontWeight="Bold" Foreground="#2D3436" Margin="0,0,0,15"/>
+							<TextBlock Text="Filter conditions" FontSize="13" FontWeight="Bold" Foreground="#2D3436" Margin="0,0,0,15"/>
 
 							<Grid>
 								<Grid.RowDefinitions>
@@ -165,7 +165,7 @@
 								</Grid.ColumnDefinitions>
 
 								<!-- Severidad -->
-								<CheckBox Grid.Row="0" Grid.Column="0" Content="Severidad" IsChecked="{Binding SeverityFilterEnabled, Mode=TwoWay}" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,0,15"/>
+								<CheckBox Grid.Row="0" Grid.Column="0" Content="Severity" IsChecked="{Binding SeverityFilterEnabled, Mode=TwoWay}" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,0,15"/>
 								<ItemsControl Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" ItemsSource="{Binding SeverityOptions}" IsEnabled="{Binding SeverityFilterEnabled}" VerticalAlignment="Center" Margin="10,0,0,15">
 									<ItemsControl.ItemsPanel>
 										<ItemsPanelTemplate>
@@ -185,7 +185,7 @@
 								<CheckBox Grid.Row="1" Grid.Column="2" Content="Case Sensitive" IsChecked="{Binding HostnameCaseSensitive, Mode=TwoWay}" IsEnabled="{Binding HostnameFilterEnabled}" VerticalAlignment="Center" Margin="0,0,0,15"/>
 
 								<!-- Aplicación -->
-								<CheckBox Grid.Row="2" Grid.Column="0" Content="Aplicación" IsChecked="{Binding AppNameFilterEnabled, Mode=TwoWay}" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,0,15"/>
+								<CheckBox Grid.Row="2" Grid.Column="0" Content="Application" IsChecked="{Binding AppNameFilterEnabled, Mode=TwoWay}" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,0,15"/>
 								<TextBox Grid.Row="2" Grid.Column="1" Text="{Binding AppNameFilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Padding="6" IsEnabled="{Binding AppNameFilterEnabled}" VerticalAlignment="Center" Margin="10,0,15,15"/>
 								<CheckBox Grid.Row="2" Grid.Column="2" Content="Case Sensitive" IsChecked="{Binding AppNameCaseSensitive, Mode=TwoWay}" IsEnabled="{Binding AppNameFilterEnabled}" VerticalAlignment="Center" Margin="0,0,0,15"/>
 
@@ -206,7 +206,7 @@
 								</ItemsControl>
 
 								<!-- Mensaje -->
-								<CheckBox Grid.Row="4" Grid.Column="0" Content="Mensaje" IsChecked="{Binding MessageFilterEnabled, Mode=TwoWay}" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,0,15"/>
+								<CheckBox Grid.Row="4" Grid.Column="0" Content="Message" IsChecked="{Binding MessageFilterEnabled, Mode=TwoWay}" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,0,15"/>
 								<TextBox Grid.Row="4" Grid.Column="1" Text="{Binding MessageFilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Padding="6" IsEnabled="{Binding MessageFilterEnabled}" VerticalAlignment="Center" Margin="10,0,15,15" AcceptsReturn="False" TextWrapping="NoWrap"/>
 								<CheckBox Grid.Row="4" Grid.Column="2" Content="Case Sensitive" IsChecked="{Binding MessageCaseSensitive, Mode=TwoWay}" IsEnabled="{Binding MessageFilterEnabled}" VerticalAlignment="Center" Margin="0,0,0,15"/>
 
@@ -224,7 +224,7 @@
 					<!-- ================= GRUPO 2: FORMATO VISUAL (COLORES) ================= -->
 					<Border Grid.Row="3" Background="#FFFFFF" BorderBrush="#E0E0E0" BorderThickness="5" CornerRadius="4" Padding="15" Margin="0,0,0,20">
 						<StackPanel>
-							<TextBlock Text="Formato Estilo Visual" FontSize="13" FontWeight="Bold" Foreground="#2D3436" Margin="0,0,0,15"/>
+							<TextBlock Text="Filter Style" FontSize="13" FontWeight="Bold" Foreground="#2D3436" Margin="0,0,0,15"/>
 
 							<StackPanel Orientation="Horizontal">
 								<!-- Lado del Fondo -->

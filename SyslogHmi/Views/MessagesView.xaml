@@ -27,7 +27,7 @@
         <Border Grid.Column="0" Background="White" BorderBrush="#E0E0E0" BorderThickness="0,0,0,0" Padding="15">
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel>
-                    <TextBlock Text="FILTROS" FontSize="14" FontWeight="Bold" Margin="0,5,0,15" Foreground="#2D3436"/>
+                    <TextBlock Text="FILTERS" FontSize="14" FontWeight="Bold" Margin="0,5,0,15" Foreground="#2D3436"/>
 
                     <!-- Hostname Filter -->
                     <TextBlock Text="Hostname:" FontSize="11" FontWeight="Bold" Margin="0,0,0,5" Foreground="#7F8C8D"/>
@@ -40,7 +40,7 @@
                              TextWrapping="Wrap"/>
 
                     <!-- AppName Filter -->
-                    <TextBlock Text="Aplicación:" FontSize="11" FontWeight="Bold" Margin="0,0,0,5" Foreground="#7F8C8D"/>
+                    <TextBlock Text="Aplication:" FontSize="11" FontWeight="Bold" Margin="0,0,0,5" Foreground="#7F8C8D"/>
                     <TextBox Padding="8" Margin="0,0,0,12" BorderBrush="#E0E0E0"
                              Text="{Binding FilterViewModel.AppNameFilter, UpdateSourceTrigger=PropertyChanged}"
                              AcceptsReturn="True"
@@ -50,13 +50,13 @@
                              />
 
                     <!-- Message Filter -->
-                    <TextBlock Text="Mensaje:" FontSize="11" FontWeight="Bold" Margin="0,0,0,5" Foreground="#7F8C8D"/>
+                    <TextBlock Text="Message:" FontSize="11" FontWeight="Bold" Margin="0,0,0,5" Foreground="#7F8C8D"/>
                     <TextBox Padding="8" Margin="0,0,0,12" Height="60" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderBrush="#E0E0E0"
                              Text="{Binding FilterViewModel.MessageFilter, UpdateSourceTrigger=PropertyChanged}"
                              AcceptsReturn="True"/>
 
                     <!-- Severity Filter -->
-                    <TextBlock Text="Severidades Activas:" FontSize="11" FontWeight="Bold" Margin="0,0,0,8" Foreground="#7F8C8D"/>
+                    <TextBlock Text="Severities:" FontSize="11" FontWeight="Bold" Margin="0,0,0,8" Foreground="#7F8C8D"/>
                     <Border BorderBrush="#E8ECEF" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,15" Background="#F8F9FA">
                         <ItemsControl ItemsSource="{Binding FilterViewModel.SeverityOptions}"
                                       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -106,9 +106,9 @@
                     </ComboBox>
 
                     <!-- Time Range Filter -->
-                    <TextBlock Text="Rango de Tiempo:" FontSize="11" FontWeight="Bold" Margin="0,15,0,5" Foreground="#7F8C8D"/>
+                    <TextBlock Text="Time Range:" FontSize="11" FontWeight="Bold" Margin="0,15,0,5" Foreground="#7F8C8D"/>
 					<StackPanel Margin="0,0,0,15">
-                        <TextBlock Text="Desde:" FontSize="10" Foreground="#95A5A6" FontWeight="Bold"/>
+                        <TextBlock Text="from:" FontSize="10" Foreground="#95A5A6" FontWeight="Bold"/>
                         <DatePicker SelectedDate="{Binding FilterViewModel.StartTime, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,5"/>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                             <ComboBox ItemsSource="{Binding FilterViewModel.Hours}" SelectedItem="{Binding FilterViewModel.StartHour}" Width="50"/>
@@ -116,7 +116,7 @@
                             <ComboBox ItemsSource="{Binding FilterViewModel.Minutes}" SelectedItem="{Binding FilterViewModel.StartMinute}" Width="50"/>
                         </StackPanel>
 
-                        <TextBlock Text="Hasta:" FontSize="10" Foreground="#95A5A6" FontWeight="Bold"/>
+                        <TextBlock Text="to:" FontSize="10" Foreground="#95A5A6" FontWeight="Bold"/>
                         <DatePicker SelectedDate="{Binding FilterViewModel.EndTime, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,5"/>
                         <StackPanel Orientation="Horizontal">
                             <ComboBox ItemsSource="{Binding FilterViewModel.Hours}" SelectedItem="{Binding FilterViewModel.EndHour}" Width="50"/>
@@ -129,7 +129,7 @@
                     <CheckBox Content="Auto Scroll" IsChecked="{Binding FilterViewModel.AutoScroll}" Margin="2,0,0,20" FontWeight="SemiBold"/>
 
                     <!-- Clear Filters Button -->
-                    <Button Content="Limpiar Filtros" Background="#95A5A6" Foreground="White" Padding="10" FontWeight="Bold" BorderThickness="0"
+                    <Button Content="Reset Filters" Background="#95A5A6" Foreground="White" Padding="10" FontWeight="Bold" BorderThickness="0"
                             Command="{Binding FilterViewModel.ClearFiltersCommand}"/>
                 </StackPanel>
             </ScrollViewer>
@@ -156,11 +156,11 @@
             <!-- Grid Header Info -->
             <Border Grid.Row="0" Background="#E8ECEF" Padding="12,10" BorderBrush="#D0D0D0" BorderThickness="0,0,0,1">
                 <TextBlock Foreground="#2D3436" FontSize="11" FontWeight="SemiBold">
-                    <Run Text="Mostrando "/>
+                    <Run Text="Showing "/>
                     <Run Text="{Binding FilteredMessages.Count, Mode=OneWay}" Foreground="#2980B9" FontWeight="Bold"/>
-                    <Run Text=" de "/>
+                    <Run Text=" from "/>
                     <Run Text="{Binding Messages.Count, Mode=OneWay}"/>
-                    <Run Text=" mensajes syslog obtenidos"/>
+                    <Run Text=" in total"/>
                 </TextBlock>
             </Border>
 
@@ -347,7 +347,7 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="0,0,20,0">
-                            <TextBlock Text="ORIGEN:" FontSize="10" FontWeight="Bold" Foreground="#7F8C8D" VerticalAlignment="Center"/>
+                            <TextBlock Text="Origin:" FontSize="10" FontWeight="Bold" Foreground="#7F8C8D" VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding Hostname, FallbackValue='--'}" FontSize="11" FontWeight="Bold" Foreground="#2F3542" Margin="5,0,0,0" VerticalAlignment="Center"/>
                             <TextBlock Text="/" FontSize="11" Foreground="#A4B0BE" Margin="4,0"/>
                             <TextBlock Text="{Binding AppName, FallbackValue='--'}" FontSize="11" FontWeight="Bold" Foreground="#2980B9" VerticalAlignment="Center"/>
@@ -355,13 +355,13 @@
                         </StackPanel>
 
                         <StackPanel Grid.Column="1" Orientation="Horizontal">
-                            <TextBlock Text="NIVEL:" FontSize="10" FontWeight="Bold" Foreground="#7F8C8D" VerticalAlignment="Center"/>
+                            <TextBlock Text="Level:" FontSize="10" FontWeight="Bold" Foreground="#7F8C8D" VerticalAlignment="Center"/>
                             <Border Margin="6,0,0,0" Padding="6,2" CornerRadius="3" Background="#F1F2F6" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding SeverityName, FallbackValue='Ninguno'}" FontSize="10" FontWeight="ExtraBold" Foreground="#2E5BFF"/>
+                                <TextBlock Text="{Binding SeverityName, FallbackValue='N/A'}" FontSize="10" FontWeight="ExtraBold" Foreground="#2E5BFF"/>
                             </Border>
                         </StackPanel>
 
-                        <TextBlock Grid.Column="2" Text="Detalle de Contenido Completo" HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="#A4B0BE" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Text="Message detail" HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="#A4B0BE" VerticalAlignment="Center"/>
                     </Grid>
 
                     <TextBox Grid.Row="1" 
