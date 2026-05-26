@@ -84,11 +84,20 @@
                     <!-- Reset Query Button -->
                     <Button Content="Reset Query" 
                             Padding="15,10"
-                            Margin="0,0,20,0"
+                            Margin="0,0,10,0"
                             Background="#E67E22" 
                             Foreground="White"
                             FontWeight="Bold"
                             Command="{Binding ResetQueryCommand}"/>
+
+                    <!-- Export Results Button -->
+                    <Button Content="Export to CSV" 
+                            Padding="15,10"
+                            Margin="0,0,20,0"
+                            Background="#9B59B6" 
+                            Foreground="White"
+                            FontWeight="Bold"
+                            Command="{Binding ExportResultsCommand}"/>
 
                     <!-- Status Message and Result Count -->
                     <StackPanel Orientation="Horizontal" 

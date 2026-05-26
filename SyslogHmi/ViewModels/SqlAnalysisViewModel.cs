@@ -1,10 +1,9 @@
+using Microsoft.Win32;
 using SyslogHmi.Models;
 using SyslogHmi.Services;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Input;
 
@@ -115,6 +114,11 @@ namespace SyslogHmi.ViewModels
         public ICommand ResetQueryCommand { get; }
 
         /// <summary>
+        /// Command to export the query results to a CSV or Excel file.
+        /// </summary>
+        public ICommand ExportResultsCommand { get; }
+
+        /// <summary>
         /// Initializes a new instance of the SqlAnalysisViewModel class.
         /// Sets up collections, services, and commands for SQL query execution and analysis.
         /// </summary>
@@ -139,6 +143,7 @@ namespace SyslogHmi.ViewModels
             ExecuteQueryCommand = new RelayCommand(_ => ExecuteQuery(), _ => !IsExecuting);
             ClearResultsCommand = new RelayCommand(_ => ClearResults());
             ResetQueryCommand = new RelayCommand(_ => ResetQuery());
+            ExportResultsCommand = new RelayCommand(_ => ExportResults(), _ => Messages.Count > 0);
 
             // Subscribe to filter changes to refresh filtered results
             FilterViewModel.FiltersChanged += (_, _) => System.Windows.Application.Current?.Dispatcher?.Invoke(RefreshFilteredMessages);
@@ -254,6 +259,48 @@ namespace SyslogHmi.ViewModels
         {
             QueryText = "SELECT * FROM SyslogMessages LIMIT 100;";
             StatusMessage = "Query reset to default example.";
+        }
+
+        /// <summary>
+        /// Exports the current query results to a CSV file using a file save dialog.
+        /// Prompts the user to select a file location and format (CSV or CSV-as-Excel).
+        /// </summary>
+        private void ExportResults()
+        {
+            if (Messages.Count == 0)
+            {
+                StatusMessage = "Cannot export: no results to export";
+                return;
+            }
+
+            // Use the native WPF SaveFileDialog
+            var saveDialog = new SaveFileDialog
+            {
+                Title = "Export Query Results",
+                DefaultExt = ".csv",
+                Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
+                FileName = $"syslog_export_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
+            };
+
+            // Show the dialog (returns bool? in WPF)
+            bool? result = saveDialog.ShowDialog();
+
+            if (result == true && !string.IsNullOrWhiteSpace(saveDialog.FileName))
+            {
+                try
+                {
+                    var exportService = new ExportService();
+                    exportService.ExportToCsv(Messages, saveDialog.FileName);
+
+                    StatusMessage = $"Successfully exported {Messages.Count} messages to {saveDialog.FileName}";
+                    System.Diagnostics.Debug.WriteLine($"Export completed: {saveDialog.FileName}");
+                }
+                catch (Exception ex)
+                {
+                    StatusMessage = $"Export error: {ex.Message}";
+                    System.Diagnostics.Debug.WriteLine($"Export failed: {ex}");
+                }
+            }
         }
 
         /// <summary>

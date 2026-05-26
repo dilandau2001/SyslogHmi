@@ -211,7 +211,9 @@ namespace SyslogHmi.ViewModels
         /// </summary>
         private void NewRule()
         {
-            SelectedRule = null;
+            var rule = new ColorRule();
+            SelectedRule = rule;
+            ColorRules.Add(rule); // Add to collection to allow form binding and immediate editing
             FormViewModel.Reset();
         }
 
