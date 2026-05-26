@@ -1,12 +1,12 @@
+using SyslogHmi.Models;
 using System;
 using System.Collections.Concurrent;
-using System.Linq;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using SyslogHmi.Models;
 
 namespace SyslogHmi.Services
 {
@@ -60,9 +60,6 @@ namespace SyslogHmi.Services
         }
 
         /// <summary>
-        /// Gracefully stops the background network operations and disconnects any active clients.
-        /// </summary>
-        /// <summary>
         /// Instantly stops the network listeners and signals all background tasks to cancel.
         /// This method does not block the calling thread.
         /// </summary>
@@ -73,7 +70,7 @@ namespace SyslogHmi.Services
 
             _isRunning = false;
 
-            // 1. Instantly signal all async loops (ReadAsync, ReceiveAsync) to cancel
+            // 1. Instantly signal all async loops (ReadLineAsync, ReceiveAsync) to cancel
             try
             {
                 _cancellationTokenSource?.Cancel();
@@ -132,7 +129,8 @@ namespace SyslogHmi.Services
         }
 
         /// <summary>
-        /// Asynchronously reads incoming network text streams from an established TCP client connection.
+        /// Asynchronously reads incoming network text streams line-by-line from an established TCP connection.
+        /// Implements Non-Transparent Framing standard.
         /// </summary>
         /// <param name="client">The active TCP connection instance.</param>
         /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
@@ -140,17 +138,17 @@ namespace SyslogHmi.Services
         {
             using (client)
             using (var stream = client.GetStream())
+            // StreamReader naturally abstracts buffer fragmentations and line aggregations (\n or \r\n)
+            using (var reader = new StreamReader(stream, Encoding.UTF8))
             {
-                var buffer = new byte[4096];
                 try
                 {
                     while (!cancellationToken.IsCancellationRequested)
                     {
-                        int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
-                        if (bytesRead == 0)
+                        string rawMessage = await reader.ReadLineAsync(cancellationToken);
+                        if (rawMessage == null)
                             break; // Client closed connection cleanly
 
-                        string rawMessage = Encoding.UTF8.GetString(buffer, 0, bytesRead);
                         var message = ParseSyslogMessage(rawMessage);
                         if (message != null)
                         {
@@ -195,105 +193,71 @@ namespace SyslogHmi.Services
         }
 
         /// <summary>
-        /// Parses raw network strings according to standard BSD/IETF Syslog layouts (<see cref="System.Net.Sockets"/> RFC 3164 / RFC 5424 specifications).
+        /// Parses raw network strings according to standard BSD (RFC 3164) or IETF (RFC 5424) Syslog layouts.
         /// </summary>
         /// <param name="rawMessage">The unmodified text string received directly from the socket network packet buffer.</param>
-        /// <returns>A structured model representation of the message parameters, or null if schema initialization fails.</returns>
+        /// <returns>A structured model representation of the message parameters, or null if validation fails.</returns>
         private SyslogMessage ParseSyslogMessage(string rawMessage)
         {
+            if (string.IsNullOrWhiteSpace(rawMessage))
+                return null;
+
             try
             {
-                if (string.IsNullOrWhiteSpace(rawMessage))
+                // Utilize Spans to execute zero-allocation structural checks on the heap
+                ReadOnlySpan<char> textSpan = rawMessage.AsSpan().Trim();
+
+                if (textSpan.Length < 4 || textSpan[0] != '<')
+                    return null;
+
+                int priEnd = textSpan.IndexOf('>');
+                if (priEnd == -1)
+                    return null;
+
+                // 1. Extract and calculate Priority, Facility, and Severity properties
+                var priSpan = textSpan.Slice(1, priEnd - 1);
+                if (!int.TryParse(priSpan, out int pri))
                     return null;
 
                 var message = new SyslogMessage
                 {
                     FullMessage = rawMessage,
                     ReceivedTime = DateTime.UtcNow,
-                    Timestamp = DateTime.UtcNow // Mantener como fallback por seguridad
+                    Facility = (pri >> 3) & 0x1F,
+                    Severity = pri & 0x07
                 };
-
-                // 1. Validar el inicio y extraer la prioridad <PRI>
-                int priEnd = rawMessage.IndexOf('>');
-                if (priEnd == -1 || !rawMessage.StartsWith("<"))
-                    return null;
-
-                string priStr = rawMessage.Substring(1, priEnd - 1);
-                if (!int.TryParse(priStr, out int pri))
-                    return null;
-
-                message.Facility = (pri >> 3) & 0x1F;
-                message.Severity = pri & 0x07;
                 message.FacilityName = GetFacilityName(message.Facility);
                 message.SeverityName = GetSeverityName(message.Severity);
 
-                string rest = rawMessage.Substring(priEnd + 1).Trim();
-                var parts = rest.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length == 0)
+                // Advance cursor right past the closing '>' bracket
+                ReadOnlySpan<char> rest = textSpan.Slice(priEnd + 1);
+                if (rest.IsEmpty)
                     return message;
 
-                // ==========================================
-                // NUEVO: PARSEO DEL TIMESTAMP DEL SIMULADOR (RFC 5424)
-                // ==========================================
-                // El primer elemento tras el '>' en el simulador es el timestamp (ej: 2026-05-21T00:26:05.123Z)
-                string timestampStr = parts[0];
-                int nextPartIndex = 1;
-
-                // Intentamos parsear el formato ISO con el que el simulador envía el texto
-                if (DateTime.TryParse(timestampStr, out DateTime parsedDate))
+                // 2. Identify RFC protocol layout by evaluating version digit presence (RFC 5424 starts with version, e.g., '1 ')
+                bool isRfc5424 = false;
+                if (char.IsDigit(rest[0]))
                 {
-                    // Forzamos explícitamente el Kind a UTC porque sabemos que tu simulador añade la 'Z'
-                    message.Timestamp = DateTime.SpecifyKind(parsedDate, DateTimeKind.Utc);
-                }
-                else
-                {
-                    // Si por algún motivo falla (o es formato RFC 3164 antiguo), mantenemos el fallback actual
-                    message.Timestamp = DateTime.UtcNow;
-                    nextPartIndex = 0; // No avanzamos el índice si el primer elemento no era una fecha
-                }
-
-                // Ajustamos la lectura del Hostname basándonos en si consumimos el token de la fecha o no
-                if (parts.Length > nextPartIndex)
-                {
-                    message.Hostname = parts[nextPartIndex];
-                    nextPartIndex++;
-                }
-
-                // Procesar la aplicación y el PID desplazando los índices correspondientes
-                if (parts.Length > nextPartIndex)
-                {
-                    var appPart = parts[nextPartIndex];
-                    nextPartIndex++;
-
-                    int bracketPos = appPart.IndexOf('[');
-                    if (bracketPos != -1)
+                    int spaceIdx = rest.IndexOf(' ');
+                    if (spaceIdx != -1)
                     {
-                        message.AppName = appPart.Substring(0, bracketPos);
-                        int pidEnd = appPart.IndexOf(']', bracketPos);
-                        if (pidEnd != -1 && int.TryParse(appPart.Substring(bracketPos + 1, pidEnd - bracketPos - 1), out int pid))
+                        var versionSpan = rest.Slice(0, spaceIdx);
+                        if (int.TryParse(versionSpan, out int version) && version == 1)
                         {
-                            message.ProcessId = pid;
+                            isRfc5424 = true;
+                            rest = rest.Slice(spaceIdx + 1); // Advance past version block directly to Timestamp
                         }
                     }
-                    else
-                    {
-                        message.AppName = appPart.TrimEnd(':');
-                    }
                 }
 
-                // Aislar el mensaje final
-                int messageStart = rawMessage.IndexOf(": ", priEnd + 1, StringComparison.Ordinal);
-                if (messageStart != -1)
+                // 3. Forward tracking references to specialized internal engines
+                if (isRfc5424)
                 {
-                    message.Message = rawMessage[(messageStart + 2)..];
-                }
-                else if (parts.Length > nextPartIndex)
-                {
-                    message.Message = string.Join(" ", parts.Skip(nextPartIndex));
+                    ParseRfc5424(rest, message);
                 }
                 else
                 {
-                    message.Message = rest;
+                    ParseRfc3164(rest, message);
                 }
 
                 return message;
@@ -302,6 +266,144 @@ namespace SyslogHmi.Services
             {
                 System.Diagnostics.Debug.WriteLine($"Syslog layout structural parsing exception: {ex.Message}");
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// Detailed extraction routine targeted for the strict ISO-8601 structural layouts of IETF RFC 5424.
+        /// </summary>
+        private void ParseRfc5424(ReadOnlySpan<char> span, SyslogMessage message)
+        {
+            // Expected layout template: 2026-05-21T00:26:05.123Z hostname appname [PID] MSGID STRUCTURED-DATA msg...
+
+            // 1. TIMESTAMP
+            int space1 = span.IndexOf(' ');
+            if (space1 == -1) return;
+            var timeSpan = span.Slice(0, space1);
+            if (DateTime.TryParse(timeSpan, out DateTime parsedDate))
+            {
+                message.Timestamp = DateTime.SpecifyKind(parsedDate, DateTimeKind.Utc);
+            }
+            span = span.Slice(space1 + 1);
+
+            // 2. HOSTNAME
+            int space2 = span.IndexOf(' ');
+            if (space2 == -1) return;
+            message.Hostname = span.Slice(0, space2).ToString();
+            span = span.Slice(space2 + 1);
+
+            // 3. APP-NAME
+            int space3 = span.IndexOf(' ');
+            if (space3 == -1) return;
+            message.AppName = span.Slice(0, space3).ToString();
+            span = span.Slice(space3 + 1);
+
+            // 4. PROCID (Process ID)
+            int space4 = span.IndexOf(' ');
+            if (space4 == -1) return;
+            var procIdSpan = span.Slice(0, space4);
+            if (int.TryParse(procIdSpan, out int pid))
+            {
+                message.ProcessId = pid;
+            }
+            span = span.Slice(space4 + 1);
+
+            // 5. MSGID (New: Advance past MSGID field)
+            int space5 = span.IndexOf(' ');
+            if (space5 == -1) return;
+            // We don't map MSGID to a property here, but we advance the span past it
+            span = span.Slice(space5 + 1);
+
+            // 6. STRUCTURED-DATA (Handled cleanly whether it's a null '-' or a bracketed block '[...]')
+            if (span.Length > 0 && span[0] == '-')
+            {
+                int space6 = span.IndexOf(' ');
+                if (space6 != -1)
+                {
+                    span = span.Slice(space6 + 1); // Skip the '-' and the trailing space
+                }
+            }
+            else if (span.Length > 0 && span[0] == '[')
+            {
+                int endBracket = span.IndexOf(']');
+                if (endBracket != -1 && endBracket < span.Length - 1)
+                {
+                    span = span.Slice(endBracket + 2); // Skip the structured chunk and its trailing space
+                }
+            }
+
+            // 7. RAW MESSAGE CONTENT
+            message.Message = span.ToString();
+        }
+
+        /// <summary>
+        /// Detailed positional parsing engine designed to isolate properties inside legacy BSD RFC 3164 templates.
+        /// </summary>
+        private void ParseRfc3164(ReadOnlySpan<char> span, SyslogMessage message)
+        {
+            // Expected layout template: Oct 11 22:14:15 hostname app[123]: message content
+            if (span.Length < 16)
+            {
+                message.Timestamp = DateTime.UtcNow;
+                message.Message = span.ToString();
+                return;
+            }
+
+            // 1. TIMESTAMP (The introductory 15 characters are fixed positions under BSD standards)
+            var timeSpan = span.Slice(0, 15);
+            if (DateTime.TryParse(timeSpan, out DateTime parsedDate))
+            {
+                // Note: Legacy RFC 3164 completely drops the execution year context.
+                // We inject the running OS year parameter to safeguard grid timelines from drifting.
+                message.Timestamp = new DateTime(DateTime.UtcNow.Year, parsedDate.Month, parsedDate.Day,
+                                                 parsedDate.Hour, parsedDate.Minute, parsedDate.Second, DateTimeKind.Utc);
+            }
+            else
+            {
+                message.Timestamp = DateTime.UtcNow;
+            }
+
+            // Advance past the fixed timestamp layout blocks and their trailing space boundary
+            span = span.Slice(16);
+
+            // 2. HOSTNAME
+            int spaceIdx = span.IndexOf(' ');
+            if (spaceIdx == -1) return;
+            message.Hostname = span.Slice(0, spaceIdx).ToString();
+            span = span.Slice(spaceIdx + 1);
+
+            // 3. TAG / APPNAME (Typically formatted ending in a colon ':' or inside a tracked bracket '[PID]:')
+            int colonIdx = span.IndexOf(':');
+            if (colonIdx != -1)
+            {
+                var tagSpan = span.Slice(0, colonIdx);
+                int bracketOpen = tagSpan.IndexOf('[');
+                int bracketClose = tagSpan.IndexOf(']');
+
+                if (bracketOpen != -1 && bracketClose != -1)
+                {
+                    message.AppName = tagSpan.Slice(0, bracketOpen).ToString();
+                    var pidSpan = tagSpan.Slice(bracketOpen + 1, bracketClose - bracketOpen - 1);
+                    if (int.TryParse(pidSpan, out int pid))
+                    {
+                        message.ProcessId = pid;
+                    }
+                }
+                else
+                {
+                    message.AppName = tagSpan.ToString();
+                }
+
+                // The message content resides right after the structural signature pattern ": "
+                if (colonIdx + 1 < span.Length && span[colonIdx + 1] == ' ')
+                    message.Message = span.Slice(colonIdx + 2).ToString();
+                else
+                    message.Message = span.Slice(colonIdx + 1).ToString();
+            }
+            else
+            {
+                // Fallback implementation logic if the tag does not match standard BSD patterns
+                message.Message = span.ToString();
             }
         }
 

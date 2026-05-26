@@ -34,7 +34,7 @@ namespace SyslogHmi.Services
             "Queue depth increasing"
         };
 
-        public void SendRandomSyslogMessage(string host = "localhost", int port = 514)
+        public void SendRandomSyslogMessage(string host = "localhost", int port = 514, bool useRfc5424 = true)
         {
             try
             {
@@ -45,11 +45,32 @@ namespace SyslogHmi.Services
                 var message = Messages[_random.Next(Messages.Length)];
                 var pid = _random.Next(1000, 65535);
 
-                // RFC 5424 format (simplified)
-                var timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
-                var priority = (facility * 8) + severity;
+                int priority = (facility * 8) + severity;
+                string syslogMessage;
 
-                var syslogMessage = $"<{priority}>{timestamp} {hostname} {app}[{pid}]: {message}";
+                if (useRfc5424)
+                {
+                    // Strict RFC 5424 format: <PRI>VERSION TIMESTAMP HOSTNAME APP-NAME PROCID MSGID STRUCTURED-DATA MSG
+                    // Note the explicit '1' for version, and separate spaces for AppName and PID. 
+                    // We use '-' for the optional MSGID and STRUCTURED-DATA fields.
+                    var timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+                    syslogMessage = $"<{priority}>1 {timestamp} {hostname} {app} {pid} - - {message}";
+                }
+                else
+                {
+                    // Strict RFC 3164 format: <PRI>Mmm dd hh:mm:ss HOSTNAME TAG: MSG
+                    // Note the forced single or double space for days less than 10 (handled by standard "MMM d ...")
+                    // We also need to build a culture-invariant English format to match typical BSD logs.
+                    var timestamp = DateTime.UtcNow.ToString("MMM  d HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
+
+                    // If the day is two digits, fix the extra space introduced above to keep standard BSD layout padding
+                    if (DateTime.UtcNow.Day >= 10)
+                    {
+                        timestamp = DateTime.UtcNow.ToString("MMM dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
+                    }
+
+                    syslogMessage = $"<{priority}>{timestamp} {hostname} {app}[{pid}]: {message}";
+                }
 
                 SendUdpMessage(syslogMessage, host, port);
             }
