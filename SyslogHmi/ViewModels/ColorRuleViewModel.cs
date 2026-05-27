@@ -75,7 +75,7 @@ namespace SyslogHmi.ViewModels
         /// <param name="databaseService">The infrastructure service used to persist rules data.</param>
         public ColorRuleViewModel(DatabaseService databaseService = null)
         {
-            ColorRules = new ObservableCollection<ColorRule>();
+            ColorRules = [];
             FormViewModel = new ColorRuleFormViewModel();
             _databaseService = databaseService;
 
@@ -94,7 +94,7 @@ namespace SyslogHmi.ViewModels
             {
                 if (FormViewModel.IsEditMode)
                 {
-                    int index = -1;
+                    var index = -1;
 
                     // 1. ESTRATEGIA PRINCIPAL: Como SelectedRule apunta a la regla vieja que está 
                     // actualmente seleccionada en el ListBox, le pedimos su índice directo.
@@ -171,6 +171,10 @@ namespace SyslogHmi.ViewModels
             {
                 var rulesFromDb = _databaseService.GetAllColorRules();
                 ColorRules.Clear();
+
+                // Validate all rules for data integrity
+                ColorRuleValidator.ValidateAllRules(new ObservableCollection<ColorRule>(rulesFromDb));
+
                 foreach (var rule in rulesFromDb)
                 {
                     ColorRules.Add(rule);
@@ -208,12 +212,13 @@ namespace SyslogHmi.ViewModels
 
         /// <summary>
         /// Resets state parameters to allow the input form to receive input details for a new rule.
+        /// The rule is NOT added to the collection yet - it will be added when saved via RuleSaved event.
         /// </summary>
         private void NewRule()
         {
             var rule = new ColorRule();
             SelectedRule = rule;
-            ColorRules.Add(rule); // Add to collection to allow form binding and immediate editing
+            // Do NOT add to ColorRules here - it will be added in the RuleSaved event when saved
             FormViewModel.Reset();
         }
 
@@ -262,7 +267,7 @@ namespace SyslogHmi.ViewModels
         /// </summary>
         private void UpdatePriorities()
         {
-            for (int i = 0; i < ColorRules.Count; i++)
+            for (var i = 0; i < ColorRules.Count; i++)
             {
                 ColorRules[i].Priority = i;
             }
@@ -277,8 +282,7 @@ namespace SyslogHmi.ViewModels
         {
             // Rules are ordered by priority sequence index (top items take evaluation precedence)
             return ColorRules
-                .Where(r => r.Matches(message))
-                .FirstOrDefault();
+                .FirstOrDefault(r => r.Matches(message));
         }
     }
 }

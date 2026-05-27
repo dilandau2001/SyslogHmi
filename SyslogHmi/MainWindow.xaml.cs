@@ -8,7 +8,7 @@ namespace SyslogHmi
         public MainWindow()
         {
             InitializeComponent();
-            this.DataContext = new MainViewModel();
+            DataContext = new MainViewModel();
         }
     }
 }

@@ -44,22 +44,22 @@ namespace SyslogHmi.Models
         /// <summary>
         /// Numeric severity level (0-7).
         /// </summary>
-        public int Severity { get; set; } // 0-7
+        public SyslogSeverity Severity { get; set; } // 0-7
 
         /// <summary>
         /// Numeric facility code (0-23).
         /// </summary>
-        public int Facility { get; set; } // 0-23
+        public SyslogFacility Facility { get; set; } // 0-23
 
         /// <summary>
         /// Human-friendly severity name (e.g. "Error").
         /// </summary>
-        public string SeverityName { get; set; } = string.Empty;
+        public string SeverityName => Severity.ToString();
 
         /// <summary>
         /// Human-friendly facility name.
         /// </summary>
-        public string FacilityName { get; set; } = string.Empty;
+        public string FacilityName => Facility.ToString();
 
         /// <summary>
         /// Short message content.

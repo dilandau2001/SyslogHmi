@@ -193,8 +193,8 @@ namespace SyslogHmi.ViewModels
             }
 
             // Step 1: Initialize all in-memory collections (clean slate)
-            Messages = new BulkObservableCollection<SyslogMessage>();
-            FilteredMessages = new BulkObservableCollection<SyslogMessage>();
+            Messages = [];
+            FilteredMessages = [];
             FilterViewModel = new FilterViewModel();
 
             // Configure default sorting by timestamp in descending order
@@ -350,13 +350,13 @@ namespace SyslogHmi.ViewModels
             // Safely manage memory by removing oldest messages if collection exceeds limit
             if (Messages.Count > MaxUiMessages)
             {
-                int excess = Messages.Count - MaxUiMessages;
+                var excess = Messages.Count - MaxUiMessages;
                 Messages.RemoveFromEnd(excess);
             }
 
             if (FilteredMessages.Count > MaxUiMessages)
             {
-                int excess = FilteredMessages.Count - MaxUiMessages;
+                var excess = FilteredMessages.Count - MaxUiMessages;
                 FilteredMessages.RemoveFromEnd(excess);
             }
 
@@ -436,7 +436,7 @@ namespace SyslogHmi.ViewModels
         {
             Task.Run(() =>
             {
-                int count = 100;
+                var count = 100;
                 while (count > 0)
                 {
                     try

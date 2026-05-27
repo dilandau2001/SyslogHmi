@@ -21,7 +21,7 @@ namespace SyslogHmi.Models
         /// <summary>
         /// The set of conditions that must all evaluate to true for this rule to apply.
         /// </summary>
-        public ObservableCollection<ColorCondition> Conditions { get; set; } = new ObservableCollection<ColorCondition>();
+        public ObservableCollection<ColorCondition> Conditions { get; set; } = [];
 
         /// <summary>
         /// Formatting to apply when the rule matches (colors, font style).

@@ -125,8 +125,8 @@ namespace SyslogHmi.ViewModels
         public SqlAnalysisViewModel()
         {
             // Initialize collections
-            Messages = new BulkObservableCollection<SyslogMessage>();
-            FilteredMessages = new BulkObservableCollection<SyslogMessage>();
+            Messages = [];
+            FilteredMessages = [];
             FilterViewModel = new FilterViewModel();
 
             // Initialize database service
@@ -283,7 +283,7 @@ namespace SyslogHmi.ViewModels
             };
 
             // Show the dialog (returns bool? in WPF)
-            bool? result = saveDialog.ShowDialog();
+            var result = saveDialog.ShowDialog();
 
             if (result == true && !string.IsNullOrWhiteSpace(saveDialog.FileName))
             {
@@ -293,12 +293,12 @@ namespace SyslogHmi.ViewModels
                     exportService.ExportToCsv(Messages, saveDialog.FileName);
 
                     StatusMessage = $"Successfully exported {Messages.Count} messages to {saveDialog.FileName}";
-                    System.Diagnostics.Debug.WriteLine($"Export completed: {saveDialog.FileName}");
+                    Debug.WriteLine($"Export completed: {saveDialog.FileName}");
                 }
                 catch (Exception ex)
                 {
                     StatusMessage = $"Export error: {ex.Message}";
-                    System.Diagnostics.Debug.WriteLine($"Export failed: {ex}");
+                    Debug.WriteLine($"Export failed: {ex}");
                 }
             }
         }

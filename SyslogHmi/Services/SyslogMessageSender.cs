@@ -9,13 +9,15 @@ namespace SyslogHmi.Services
     {
         private readonly Random _random = new Random();
 
-        private static readonly string[] Hostnames = { "web-server-01", "db-server-01", "app-server-02", "cache-01", "router-01", "firewall-01" };
-        private static readonly string[] Applications = { "nginx", "postgresql", "java-app", "redis", "kernel", "sshd", "systemd", "cron", "apache2" };
-        private static readonly int[] Severities = { 0, 1, 2, 3, 4, 5, 6, 7 };
-        private static readonly int[] Facilities = { 0, 1, 2, 3, 4, 5, 6, 7, 16, 17, 18, 19, 20, 21, 22, 23 };
+        private static readonly string[] Hostnames = ["web-server-01", "db-server-01", "app-server-02", "cache-01", "router-01", "firewall-01"
+        ];
+        private static readonly string[] Applications = ["nginx", "postgresql", "java-app", "redis", "kernel", "sshd", "systemd", "cron", "apache2"
+        ];
+        private static readonly int[] Severities = [0, 1, 2, 3, 4, 5, 6, 7];
+        private static readonly int[] Facilities = [0, 1, 2, 3, 4, 5, 6, 7, 16, 17, 18, 19, 20, 21, 22, 23];
 
-        private static readonly string[] Messages = new[]
-        {
+        private static readonly string[] Messages =
+        [
             "User 'galias' successfully authenticated from IP 192.168.1.45.\nSession token generated.\nRetrying",
             "Started User Manager",
             "Database connection established",
@@ -32,7 +34,7 @@ namespace SyslogHmi.Services
             "Cache invalidated",
             "SSL handshake failed",
             "Queue depth increasing"
-        };
+        ];
 
         public void SendRandomSyslogMessage(string host = "localhost", int port = 514, bool useRfc5424 = true)
         {
@@ -45,7 +47,7 @@ namespace SyslogHmi.Services
                 var message = Messages[_random.Next(Messages.Length)];
                 var pid = _random.Next(1000, 65535);
 
-                int priority = (facility * 8) + severity;
+                var priority = (facility * 8) + severity;
                 string syslogMessage;
 
                 if (useRfc5424)

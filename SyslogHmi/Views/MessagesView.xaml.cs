@@ -19,7 +19,7 @@ namespace SyslogHmi.Views
         {
             if (e.OriginalSource is MenuItem menuItem && menuItem.Tag != null)
             {
-                if (int.TryParse(menuItem.Tag.ToString(), out int columnIndex))
+                if (int.TryParse(menuItem.Tag.ToString(), out var columnIndex))
                 {
                     var contextMenu = sender as ContextMenu;
                     if (contextMenu?.PlacementTarget is DataGrid dataGrid && columnIndex < dataGrid.Columns.Count)

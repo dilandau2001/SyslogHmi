@@ -45,9 +45,9 @@ namespace SyslogHmi.ViewModels
                 // Para mantener el orden cronológico invertido (los más nuevos primero),
                 // recorremos el lote de atrás hacia adelante al insertar en el índice 0
                 var list = new List<T>(collection);
-                for (int i = list.Count - 1; i >= 0; i--)
+                for (var i = list.Count - 1; i >= 0; i--)
                 {
-                    this.Insert(0, list[i]);
+                    Insert(0, list[i]);
                 }
             }
             finally
@@ -70,11 +70,11 @@ namespace SyslogHmi.ViewModels
             _suppressNotification = true;
             try
             {
-                for (int i = 0; i < countToRemove; i++)
+                for (var i = 0; i < countToRemove; i++)
                 {
-                    if (this.Count > 0)
+                    if (Count > 0)
                     {
-                        this.RemoveAt(this.Count - 1);
+                        RemoveAt(Count - 1);
                     }
                 }
             }

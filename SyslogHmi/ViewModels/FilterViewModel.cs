@@ -121,7 +121,7 @@ namespace SyslogHmi.ViewModels
                 };
             }
 
-            this.PropertyChanged += (sender, args) => FiltersChanged?.Invoke(this, EventArgs.Empty);
+            PropertyChanged += (sender, args) => FiltersChanged?.Invoke(this, EventArgs.Empty);
         }
 
         public event EventHandler FiltersChanged;  
@@ -154,7 +154,7 @@ namespace SyslogHmi.ViewModels
 
                 if (hostLines.Count > 0)
                 {
-                    bool matchesAnyHost = hostLines.Any(line =>
+                    var matchesAnyHost = hostLines.Any(line =>
                         message.Hostname != null &&
                         message.Hostname.Contains(line, StringComparison.OrdinalIgnoreCase));
 
@@ -171,7 +171,7 @@ namespace SyslogHmi.ViewModels
 
                 if (appnames.Count > 0)
                 {
-                    bool matchesAnyHost = appnames.Any(line =>
+                    var matchesAnyHost = appnames.Any(line =>
                         message.AppName != null &&
                         message.AppName.Contains(line, StringComparison.OrdinalIgnoreCase));
 
@@ -188,7 +188,7 @@ namespace SyslogHmi.ViewModels
 
                 if (messages.Count > 0)
                 {
-                    bool matchesAnyHost = messages.Any(line =>
+                    var matchesAnyHost = messages.Any(line =>
                         message.Message != null &&
                         message.Message.Contains(line, StringComparison.OrdinalIgnoreCase));
 
@@ -196,13 +196,13 @@ namespace SyslogHmi.ViewModels
                 }
             }
 
-            var option = SeverityOptions.FirstOrDefault(o => o.Tag == message.Severity);
+            var option = SeverityOptions.FirstOrDefault(o => o.Tag == (int)message.Severity);
             if (option != null && !option.IsChecked)
             {
                 return false; // Si existe la opción pero no está marcada, ocultamos el mensaje
             }
 
-            if (SelectedFacility.HasValue && message.Facility != SelectedFacility.Value)
+            if (SelectedFacility.HasValue && (int)message.Facility != SelectedFacility.Value)
                 return false;
 
             if (StartTime.HasValue)

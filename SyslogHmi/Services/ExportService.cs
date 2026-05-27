@@ -131,7 +131,7 @@ namespace SyslogHmi.Services
         {
             var quoted = new string[fields.Length];
 
-            for (int i = 0; i < fields.Length; i++)
+            for (var i = 0; i < fields.Length; i++)
             {
                 var field = fields[i] ?? string.Empty;
 

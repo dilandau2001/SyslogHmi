@@ -34,7 +34,7 @@ namespace SyslogHmi.Models
         /// <summary>
         /// Alternative values used with OR logic. If set, the condition matches when either ComparisonValue or any AlternativeValues match.
         /// </summary>
-        public List<string> AlternativeValues { get; set; } = new();
+        public List<string> AlternativeValues { get; set; } = [];
 
         /// <summary>
         /// Evaluates this condition against the provided SyslogMessage instance.
@@ -43,8 +43,26 @@ namespace SyslogHmi.Models
         /// <returns>True if the condition passes; otherwise false.</returns>
         public bool Evaluate(SyslogMessage message)
         {
+            // Validation: PropertyName must be set
+            if (string.IsNullOrEmpty(PropertyName))
+            {
+                System.Diagnostics.Debug.WriteLine($"[ColorCondition.Evaluate] WARNING: PropertyName is empty or null!");
+                return false;
+            }
+
+            // Validation: ComparisonValue should not be empty for most operations
+            if (string.IsNullOrEmpty(ComparisonValue) && ComparisonType != ComparisonType.RegexMatch)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ColorCondition.Evaluate] WARNING: ComparisonValue is empty for PropertyName={PropertyName}, ComparisonType={ComparisonType}");
+                return false;
+            }
+
             var propertyValue = GetPropertyValue(message);
-            if (propertyValue == null) return false;
+            if (propertyValue == null)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ColorCondition.Evaluate] WARNING: GetPropertyValue returned null for PropertyName='{PropertyName}'. Available properties: Severity, SeverityName, Facility, FacilityName, Hostname, AppName, Message, FullMessage, ProcessId, MessageId, Timestamp");
+                return false;
+            }
 
             var stringComparison = CaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
 
@@ -103,14 +121,20 @@ namespace SyslogHmi.Models
         /// <summary>
         /// Retrieves the string representation of the targeted property from the SyslogMessage.
         /// Returns null when the PropertyName is not recognized.
+        /// For Severity and Facility enums, converts them to their numeric values as strings.
         /// </summary>
         private string GetPropertyValue(SyslogMessage message)
         {
             return PropertyName switch
             {
-                nameof(SyslogMessage.Severity) => message.Severity.ToString(),
+                // Convert SyslogSeverity enum to its numeric value for comparison
+                nameof(SyslogMessage.Severity) => ((int)message.Severity).ToString(),
+
                 nameof(SyslogMessage.SeverityName) => message.SeverityName,
-                nameof(SyslogMessage.Facility) => message.Facility.ToString(),
+
+                // Convert SyslogFacility enum to its numeric value for comparison
+                nameof(SyslogMessage.Facility) => ((int)message.Facility).ToString(),
+
                 nameof(SyslogMessage.FacilityName) => message.FacilityName,
                 nameof(SyslogMessage.Hostname) => message.Hostname,
                 nameof(SyslogMessage.AppName) => message.AppName,

@@ -13,8 +13,8 @@ namespace SyslogHmi.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            bool inverted = (parameter as string) == "Inverted";
-            bool isNull = value == null;
+            var inverted = (parameter as string) == "Inverted";
+            var isNull = value == null;
             if (inverted)
                 return isNull ? Visibility.Visible : Visibility.Collapsed;
             return isNull ? Visibility.Collapsed : Visibility.Visible;

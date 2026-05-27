@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using SyslogHmi.Extensions;
 
 namespace SyslogHmi.Services
 {
@@ -541,10 +542,8 @@ namespace SyslogHmi.Services
                 AppName = reader["AppName"].ToString(),
                 ProcessId = Convert.ToInt32(reader["ProcessId"]),    
                 MessageId = reader["MessageId"].ToString(),
-                Severity = Convert.ToInt32(reader["Severity"]),
-                Facility = Convert.ToInt32(reader["Facility"]),
-                SeverityName = reader["SeverityName"].ToString(),
-                FacilityName = reader["FacilityName"].ToString(),
+                Severity = Convert.ToInt32(reader["Severity"]).ToSyslogSeverity(),
+                Facility = Convert.ToInt32(reader["Facility"]).ToSyslogFacility(),
                 Message = reader["Message"].ToString(),
                 FullMessage = reader["FullMessage"].ToString(),
                 ReceivedTime = DateTime.Parse(reader["ReceivedTime"].ToString() ?? "")
@@ -726,16 +725,10 @@ namespace SyslogHmi.Services
                             message.MessageId = reader["MessageId"]?.ToString();
 
                         if (reader.GetOrdinal("Severity") >= 0)
-                            message.Severity = Convert.ToInt32(reader["Severity"] ?? 0);
+                            message.Severity = Convert.ToInt32(reader["Severity"] ?? 0).ToSyslogSeverity();
 
                         if (reader.GetOrdinal("Facility") >= 0)
-                            message.Facility = Convert.ToInt32(reader["Facility"] ?? 0);
-
-                        if (reader.GetOrdinal("SeverityName") >= 0)
-                            message.SeverityName = reader["SeverityName"]?.ToString();
-
-                        if (reader.GetOrdinal("FacilityName") >= 0)
-                            message.FacilityName = reader["FacilityName"]?.ToString();
+                            message.Facility = Convert.ToInt32(reader["Facility"] ?? 0).ToSyslogFacility();
 
                         if (reader.GetOrdinal("Message") >= 0)
                             message.Message = reader["Message"]?.ToString();

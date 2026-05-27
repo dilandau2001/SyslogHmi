@@ -185,8 +185,8 @@ namespace SyslogHmi.ViewModels
             AvailableColors = new ObservableCollection<string>(ColorHelper.GetFriendlyColorNames());
             AvailableColorItems = ColorHelper.GetColorItems();
 
-            SeverityOptions = new ObservableCollection<SeverityCheckItem>();
-            for (int i = 0; i <= 7; i++)
+            SeverityOptions = [];
+            for (var i = 0; i <= 7; i++)
             {
                 SeverityOptions.Add(new SeverityCheckItem
                 {
@@ -196,9 +196,9 @@ namespace SyslogHmi.ViewModels
                 });
             }
 
-            FacilityOptions = new ObservableCollection<FacilityCheckItem>();
+            FacilityOptions = [];
             var facilities = new[] { "Kernel", "User", "Mail", "Daemon", "Auth", "Syslog", "LPR", "News", "Local0", "Local1", "Local2", "Local3", "Local4", "Local5", "Local6", "Local7" };
-            for (int i = 0; i < facilities.Length; i++)
+            for (var i = 0; i < facilities.Length; i++)
             {
                 FacilityOptions.Add(new FacilityCheckItem
                 {

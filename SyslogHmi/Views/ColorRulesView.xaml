@@ -84,15 +84,15 @@
 					</Grid.ColumnDefinitions>
 
 					<!-- Botón Subir -->
-					<Button Grid.Column="0" Content="↑ Subir" Background="#3498DB" Foreground="White" Padding="6" Margin="0,0,4,0" BorderThickness="0"
+					<Button Grid.Column="0" Content="↑ Move up" Background="#3498DB" Foreground="White" Padding="6" Margin="0,0,4,0" BorderThickness="0"
 							Command="{Binding ColorRuleViewModel.MoveRuleUpCommand}"/>
 
 					<!-- Botón Bajar -->
-					<Button Grid.Column="1" Content="↓ Bajar" Background="#3498DB" Foreground="White" Padding="6" Margin="4,0,4,0" BorderThickness="0"
+					<Button Grid.Column="1" Content="↓ Move down" Background="#3498DB" Foreground="White" Padding="6" Margin="4,0,4,0" BorderThickness="0"
 							Command="{Binding ColorRuleViewModel.MoveRuleDownCommand}"/>
 
 					<!-- Botón Eliminar -->
-					<Button Grid.Column="2" Content="Eliminar" Background="#E74C3C" Foreground="White" Padding="12,6" Margin="4,0,0,0" FontWeight="Bold" BorderThickness="0"
+					<Button Grid.Column="2" Content="Delete" Background="#E74C3C" Foreground="White" Padding="12,6" Margin="4,0,0,0" FontWeight="Bold" BorderThickness="0"
 							Command="{Binding ColorRuleViewModel.DeleteRuleCommand}"/>
 				</Grid>
 			</Grid>
