@@ -22,6 +22,17 @@ namespace SyslogHmi.ViewModels
         private readonly DatabaseService _databaseService;
 
         /// <summary>
+        /// Manager for downloading and caching LLM models.
+        /// </summary>
+        private readonly LlmModelManager _modelManager;
+
+        /// <summary>
+        /// Llm service for SQL generation.
+        /// Initialized lazily when user first uses the Generate SQL feature.
+        /// </summary>
+        private readonly LlmSqlService _llmSqlService = new LlmSqlService();
+
+        /// <summary>
         /// Collection storing the results of the executed query.
         /// </summary>
         public BulkObservableCollection<SyslogMessage> Messages { get; }
@@ -71,6 +82,8 @@ namespace SyslogHmi.ViewModels
             set => SetProperty(ref field, value);
         } = "SELECT * FROM SyslogMessages LIMIT 100;";
 
+
+
         /// <summary>
         /// Gets or sets the status message displayed to the user (errors, success messages, etc.).
         /// </summary>
@@ -119,6 +132,11 @@ namespace SyslogHmi.ViewModels
         public ICommand ExportResultsCommand { get; }
 
         /// <summary>
+        /// 
+        /// </summary>
+        public ICommand GenerateSqlCommand { get; }
+
+        /// <summary>
         /// Initializes a new instance of the SqlAnalysisViewModel class.
         /// Sets up collections, services, and commands for SQL query execution and analysis.
         /// </summary>
@@ -132,6 +150,9 @@ namespace SyslogHmi.ViewModels
             // Initialize database service
             _databaseService = new DatabaseService();
 
+            // Initialize model manager for downloading models
+            _modelManager = new LlmModelManager();
+
             // Initialize color rule view model to apply color rules to messages
             ColorRuleViewModel = new ColorRuleViewModel(_databaseService);
 
@@ -144,6 +165,7 @@ namespace SyslogHmi.ViewModels
             ClearResultsCommand = new RelayCommand(_ => ClearResults());
             ResetQueryCommand = new RelayCommand(_ => ResetQuery());
             ExportResultsCommand = new RelayCommand(_ => ExportResults(), _ => Messages.Count > 0);
+            GenerateSqlCommand = new RelayCommand(_ => GenerateSql(), _ => !IsExecuting);
 
             // Subscribe to filter changes to refresh filtered results
             FilterViewModel.FiltersChanged += (_, _) => System.Windows.Application.Current?.Dispatcher?.Invoke(RefreshFilteredMessages);
@@ -156,6 +178,26 @@ namespace SyslogHmi.ViewModels
                     ApplyColorRule(syslogMessage);
                 }
             });
+        }
+
+        private void GenerateSql()
+        {
+            // Show the model selection dialog so the user can choose/download model
+            var dialog = new Views.ModelSelectionDialog(_modelManager, _llmSqlService)
+            {
+                Owner = System.Windows.Application.Current?.MainWindow
+            };
+
+            var dlgResult = dialog.ShowDialog();
+
+            if (dlgResult != true || !_llmSqlService.Initialized)
+            {
+                StatusMessage = "Model selection cancelled. SQL generation aborted.";
+                return;
+            }
+
+            QueryText = dialog.QueryResult;
+            StatusMessage = "SQL generated successfully";
         }
 
         /// <summary>
@@ -343,6 +385,7 @@ namespace SyslogHmi.ViewModels
         public void Cleanup()
         {
             _databaseService?.Dispose();
+            _llmSqlService?.Dispose();
         }
     }
 }

@@ -24,7 +24,7 @@ namespace SyslogHmi.Services
             if (priEnd == -1)
                 return null;
 
-            var priSpan = textSpan.Slice(1, priEnd - 1);
+            var priSpan = textSpan[1..priEnd];
             if (!int.TryParse(priSpan, out var pri))
                 return null;
 
@@ -41,7 +41,7 @@ namespace SyslogHmi.Services
                 Severity = severityValue.ToSyslogSeverity()
             };
 
-            var span = textSpan.Slice(priEnd + 1);
+            var span = textSpan[(priEnd + 1)..];
 
             // CHANGED: Changed from 16 to 15. The standard BSD timestamp is exactly 15 characters.
             if (span.Length < 15)
@@ -51,7 +51,7 @@ namespace SyslogHmi.Services
                 return message;
             }
 
-            var timeSpan = span.Slice(0, 15);
+            var timeSpan = span[..15];
             string[] formats = ["MMM dd HH:mm:ss", "MMM  d HH:mm:ss", "MMM d HH:mm:ss"];
 
             if (DateTime.TryParseExact(timeSpan, formats, CultureInfo.InvariantCulture, DateTimeStyles.AllowInnerWhite, out var parsedDate))
@@ -70,23 +70,23 @@ namespace SyslogHmi.Services
                 return message;
             }
 
-            span = span.Slice(16);
+            span = span[16..];
 
             var spaceIdx = span.IndexOf(' ');
             if (spaceIdx == -1) return message;
-            message.Hostname = span.Slice(0, spaceIdx).ToString();
-            span = span.Slice(spaceIdx + 1);
+            message.Hostname = span[..spaceIdx].ToString();
+            span = span[(spaceIdx + 1)..];
 
             var colonIdx = span.IndexOf(':');
             if (colonIdx != -1)
             {
-                var tagSpan = span.Slice(0, colonIdx);
+                var tagSpan = span[..colonIdx];
                 var bracketOpen = tagSpan.IndexOf('[');
                 var bracketClose = tagSpan.IndexOf(']');
 
                 if (bracketOpen != -1 && bracketClose != -1 && bracketClose > bracketOpen)
                 {
-                    message.AppName = tagSpan.Slice(0, bracketOpen).ToString();
+                    message.AppName = tagSpan[..bracketOpen].ToString();
                     var pidSpan = tagSpan.Slice(bracketOpen + 1, bracketClose - bracketOpen - 1);
                     if (int.TryParse(pidSpan, out var pid))
                     {
@@ -99,9 +99,9 @@ namespace SyslogHmi.Services
                 }
 
                 if (colonIdx + 1 < span.Length && span[colonIdx + 1] == ' ')
-                    message.Message = span.Slice(colonIdx + 2).ToString();
+                    message.Message = span[(colonIdx + 2)..].ToString();
                 else
-                    message.Message = span.Slice(colonIdx + 1).ToString();
+                    message.Message = span[(colonIdx + 1)..].ToString();
             }
             else
             {

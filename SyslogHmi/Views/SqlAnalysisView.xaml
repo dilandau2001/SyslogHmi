@@ -90,6 +90,32 @@
                             FontWeight="Bold"
                             Command="{Binding ResetQueryCommand}"/>
 
+                    <!-- Ask IA to generate the sql -->
+                    <Button Content="Generate SQL" 
+                            Padding="15,10"
+                            Margin="0,0,10,0"
+                            Background="#E94112" 
+                            Foreground="White"
+                            FontWeight="Bold"
+                            Command="{Binding GenerateSqlCommand}">
+                        <Button.ToolTip>
+                            <ToolTip Background="#2C3E50" Foreground="White" Padding="10" BorderThickness="0">
+                                <TextBlock TextWrapping="Wrap" MaxWidth="400" LineHeight="18">
+                                    <Run FontWeight="Bold">💡 Generate SQL using AI</Run>
+                                    <LineBreak/>
+                                    <LineBreak/>
+                                    <Run>Describe what you want in natural language and the AI will convert it to SQL.</Run>
+                                    <LineBreak/>
+                                    <LineBreak/>
+                                    <Run FontStyle="Italic">Example: "show errors from server-01 in the last 24 hours"</Run>
+                                    <LineBreak/>
+                                    <LineBreak/>
+                                    <Run FontSize="10">If no model is loaded, you'll be prompted to select one (downloads on-demand).</Run>
+                                </TextBlock>
+                            </ToolTip>
+                        </Button.ToolTip>
+                    </Button>
+
                     <!-- Export Results Button -->
                     <Button Content="Export to CSV" 
                             Padding="15,10"

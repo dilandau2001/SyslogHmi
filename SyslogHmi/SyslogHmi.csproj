@@ -11,10 +11,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Converters\BoolToColorConverter.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="SyslogIcon.ico" />
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="Converters\BoolToColorConverter.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+	<PackageReference Include="LLamaSharp" Version="0.27.0" />
+	<PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.27.0" />
 	<PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.8" />
 	<PackageReference Include="Microsoft.Data.Sqlite.Core" Version="10.0.8" />
 	<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />
@@ -35,6 +45,12 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="IAModel\qwen2.5-1.5b-instruct-q4_k_m.gguf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

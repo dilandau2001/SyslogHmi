@@ -41,7 +41,7 @@ namespace SyslogHmi.Services
                 return null;
 
             // Parse PRI value.
-            var priSpan = textSpan.Slice(1, priEnd - 1);
+            var priSpan = textSpan[1..priEnd];
 
             if (!int.TryParse(priSpan, out int pri))
                 return null;
@@ -68,7 +68,7 @@ namespace SyslogHmi.Services
             };
 
             // Advance past PRI.
-            ReadOnlySpan<char> span = textSpan.Slice(priEnd + 1);
+            ReadOnlySpan<char> span = textSpan[(priEnd + 1)..];
 
             // -----------------------------------------------------------------
             // VERSION
@@ -82,7 +82,7 @@ namespace SyslogHmi.Services
             if (versionSpace == -1)
                 return message;
 
-            span = span.Slice(versionSpace + 1);
+            span = span[(versionSpace + 1)..];
 
             // -----------------------------------------------------------------
             // 1. TIMESTAMP
@@ -94,7 +94,7 @@ namespace SyslogHmi.Services
             if (spaceIdx == -1)
                 return message;
 
-            var timestampSpan = span.Slice(0, spaceIdx);
+            var timestampSpan = span[..spaceIdx];
 
             // NILVALUE ("-") means timestamp is unavailable.
             if (timestampSpan.Length > 1 && timestampSpan[0] != '-')
@@ -119,7 +119,7 @@ namespace SyslogHmi.Services
                 message.Timestamp = DateTime.UtcNow;
             }
 
-            span = span.Slice(spaceIdx + 1);
+            span = span[(spaceIdx + 1)..];
 
             // -----------------------------------------------------------------
             // 2. HOSTNAME
@@ -131,13 +131,13 @@ namespace SyslogHmi.Services
             if (spaceIdx == -1)
                 return message;
 
-            var hostSpan = span.Slice(0, spaceIdx);
+            var hostSpan = span[..spaceIdx];
 
             // NILVALUE ("-") is treated as unset.
             if (hostSpan.Length > 0 && hostSpan[0] != '-')
                 message.Hostname = hostSpan.ToString();
 
-            span = span.Slice(spaceIdx + 1);
+            span = span[(spaceIdx + 1)..];
 
             // -----------------------------------------------------------------
             // 3. APP-NAME
@@ -149,13 +149,13 @@ namespace SyslogHmi.Services
             if (spaceIdx == -1)
                 return message;
 
-            var appSpan = span.Slice(0, spaceIdx);
+            var appSpan = span[..spaceIdx];
 
             // NILVALUE ("-") is treated as unset.
             if (appSpan.Length > 0 && appSpan[0] != '-')
                 message.AppName = appSpan.ToString();
 
-            span = span.Slice(spaceIdx + 1);
+            span = span[(spaceIdx + 1)..];
 
             // -----------------------------------------------------------------
             // 4. PROCID
@@ -167,7 +167,7 @@ namespace SyslogHmi.Services
             if (spaceIdx == -1)
                 return message;
 
-            var procSpan = span.Slice(0, spaceIdx);
+            var procSpan = span[..spaceIdx];
 
             // PROCID is optional and parsed only if numeric.
             if (procSpan.Length > 0 && procSpan[0] != '-')
@@ -176,7 +176,7 @@ namespace SyslogHmi.Services
                     message.ProcessId = pid;
             }
 
-            span = span.Slice(spaceIdx + 1);
+            span = span[(spaceIdx + 1)..];
 
             // -----------------------------------------------------------------
             // 5. MSGID
@@ -190,7 +190,7 @@ namespace SyslogHmi.Services
             if (spaceIdx == -1)
                 return message;
 
-            span = span.Slice(spaceIdx + 1);
+            span = span[(spaceIdx + 1)..];
 
             // -----------------------------------------------------------------
             // 6. STRUCTURED-DATA & MSG
@@ -217,7 +217,7 @@ namespace SyslogHmi.Services
                     while (currentIdx < span.Length && span[currentIdx] == '[')
                     {
                         int closingBracket =
-                            span.Slice(currentIdx).IndexOf(']');
+                            span[currentIdx..].IndexOf(']');
 
                         // Malformed SD block.
                         // Stop parsing gracefully.
@@ -236,13 +236,13 @@ namespace SyslogHmi.Services
                         span[currentIdx] == ' ')
                     {
                         message.Message =
-                            span.Slice(currentIdx + 1).ToString();
+                            span[(currentIdx + 1)..].ToString();
                     }
                     // Handles compacted payloads without separator space.
                     else if (currentIdx < span.Length)
                     {
                         message.Message =
-                            span.Slice(currentIdx).ToString();
+                            span[currentIdx..].ToString();
                     }
                     else
                     {
@@ -256,13 +256,13 @@ namespace SyslogHmi.Services
                     // - Message
                     if (span.Length > 1 && span[1] == ' ')
                     {
-                        message.Message = span.Slice(2).ToString();
+                        message.Message = span[2..].ToString();
                     }
                     // Handles compacted payloads like:
                     // -rsync started
                     else if (span.Length > 1)
                     {
-                        message.Message = span.Slice(1).ToString();
+                        message.Message = span[1..].ToString();
                     }
                     else
                     {
