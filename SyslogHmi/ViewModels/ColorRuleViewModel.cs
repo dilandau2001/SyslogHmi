@@ -90,7 +90,7 @@ namespace SyslogHmi.ViewModels
 
             // Subscribe to the form persistence events
             // Handle rule saved from form
-            FormViewModel.RuleSaved += (sender, rule) =>
+            FormViewModel.RuleSaved += (_, rule) =>
             {
                 if (FormViewModel.IsEditMode)
                 {
@@ -154,7 +154,7 @@ namespace SyslogHmi.ViewModels
                 RuleChanged?.Invoke(this, EventArgs.Empty);
             };
 
-            FormViewModel.Cancelled += (sender, args) =>
+            FormViewModel.Cancelled += (_, _) =>
             {
                 SelectedRule = null;
             };

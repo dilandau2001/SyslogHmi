@@ -1,7 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,42 +9,37 @@ using SyslogHmi.Services;
 namespace SyslogHmi.ViewModels
 {
     /// <summary>
-    /// ViewModel for the model selection dialog.
-    /// Manages model selection, downloading, and progress reporting.
+    /// ViewModel for the LLM model selection dialog window.
+    /// Manages local model catalog inventory selection, asynchronous file downloads, and data-bound progress computation.
     /// </summary>
     public class ModelSelectionViewModel : ViewModelBase
     {
         private readonly LlmModelManager _modelManager;
-        private readonly LlmSqlService _llmService;
         private ObservableCollection<LlmModel> _allModels;
-        private LlmModel _selectedModel;
-        private LlmModel _loadedModel;
-        private bool _isDownloading;
-        private bool _isLoadingModel;
-        private bool _isAsking;
-        private string _currentDownloadName;
-        private double _downloadProgressPercent;
         private long _downloadedBytes;
         private long _totalBytes;
         private DateTime _downloadStartTime;
         private CancellationTokenSource _cancellationTokenSource;
-        private string _promptText;
 
-
-
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ModelSelectionViewModel"/> class.
+        /// Hooks into backend model management events for handling progress updates.
+        /// </summary>
         public ModelSelectionViewModel()
         {
             _modelManager = new LlmModelManager();
-            _llmService = new LlmSqlService();
             _allModels = [];
 
-            // Subscribe to download events
+            // Subscribe to background service down-stream download events
             _modelManager.DownloadProgress += OnDownloadProgress;
             _modelManager.DownloadStarted += OnDownloadStarted;
             _modelManager.DownloadCompleted += OnDownloadCompleted;
             _modelManager.DownloadFailed += OnDownloadFailed;
         }
 
+        /// <summary>
+        /// Gets or sets the absolute array list of all available LLM variations discovered in the system catalog.
+        /// </summary>
         public ObservableCollection<LlmModel> AllModels
         {
             get => _allModels;
@@ -59,120 +53,156 @@ namespace SyslogHmi.ViewModels
             }
         }
 
+        /// <summary>
+        /// Gets or sets the specific model target highlighted by the operator in the selection UI grid.
+        /// Updates the execution validation flags automatically on change.
+        /// </summary>
         public LlmModel SelectedModel
         {
-            get => _selectedModel;
+            get;
             set
             {
-                if (_selectedModel != value)
+                if (field != value)
                 {
-                    _selectedModel = value;
+                    field = value;
                     OnPropertyChanged();
-                    OnPropertyChanged(nameof(CanUseModel));
+                    OnPropertyChanged(nameof(CanUseModel)); // Dependent flag: recalculate if selection is valid
                 }
             }
         }
 
+        /// <summary>
+        /// Gets or sets the model binary that is currently instantiated and mapped into active CPU/GPU VRAM.
+        /// </summary>
         public LlmModel LoadedModel
         {
-            get => _loadedModel;
+            get;
             set
             {
-                if (_loadedModel != value)
+                if (field != value)
                 {
-                    _loadedModel = value;
+                    field = value;
                     OnPropertyChanged();
-                    OnPropertyChanged(nameof(CanAsk));
+                    OnPropertyChanged(nameof(CanAsk)); // Dependent flag: recalculate if query loop can execute
                 }
             }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether an active file retrieval operation is processing over the network.
+        /// </summary>
         public bool IsDownloading
         {
-            get => _isDownloading;
+            get;
             set
             {
-                if (_isDownloading != value)
+                if (field != value)
                 {
-                    _isDownloading = value;
+                    field = value;
                     OnPropertyChanged();
                 }
             }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the currently selected model is valid for configuration use.
+        /// Returns false if no model is selected or if a file download is already in progress.
+        /// </summary>
         public bool CanUseModel => SelectedModel != null && !IsDownloading;
 
+        /// <summary>
+        /// Gets or sets a value indicating whether the application is loading the model weights into engine memory.
+        /// </summary>
         public bool IsLoadingModel
         {
-            get => _isLoadingModel;
+            get;
             set
             {
-                if (_isLoadingModel != value)
+                if (field != value)
                 {
-                    _isLoadingModel = value;
+                    field = value;
                     OnPropertyChanged();
                 }
             }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether an active inference question prompt is being processed by the local model.
+        /// </summary>
         public bool IsAsking
         {
-            get => _isAsking;
+            get;
             set
             {
-                if (_isAsking != value)
+                if (field != value)
                 {
-                    _isAsking = value;
+                    field = value;
                     OnPropertyChanged();
-                    OnPropertyChanged(nameof(CanAsk));
+                    OnPropertyChanged(nameof(CanAsk)); // Dependent flag: lock out simultaneous requests
                 }
             }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether an operator can submit a text prompt to the chat engine interface.
+        /// </summary>
         public bool CanAsk => LoadedModel != null && !IsAsking;
 
+        /// <summary>
+        /// Gets or sets the raw string content of the prompt text input field.
+        /// </summary>
         public string PromptText
         {
-            get => _promptText;
-            set => SetProperty(ref _promptText, value);
+            get;
+            set => SetProperty(ref field, value);
         }
 
+        /// <summary>
+        /// Gets or sets the descriptive title of the file currently executing a network payload transfer.
+        /// </summary>
         public string CurrentDownloadName
         {
-            get => _currentDownloadName;
+            get;
             set
             {
-                if (_currentDownloadName != value)
-                {
-                    _currentDownloadName = value;
-                    OnPropertyChanged();
-                }
+                if (field == value)
+                    return;
+                
+                field = value;
+                OnPropertyChanged();
             }
         }
 
+        /// <summary>
+        /// Gets or sets the percentage value of the current download operation (Range: 0.0 to 100.0).
+        /// Implements a low-pass delta filter check to avoid thrashing data bindings for minor micro-shifts.
+        /// </summary>
         public double DownloadProgressPercent
         {
-            get => _downloadProgressPercent;
+            get;
             set
             {
-                if (Math.Abs(_downloadProgressPercent - value) > 0.1)
-                {
-                    _downloadProgressPercent = value;
-                    OnPropertyChanged();
-                }
+                if (!(Math.Abs(field - value) > 0.1))
+                    return;
+                
+                field = value;
+                OnPropertyChanged();
             }
         }
 
-        public string DownloadedMb
-        {
-            get => (_downloadedBytes / (1024.0 * 1024.0)).ToString("F1");
-        }
+        /// <summary>
+        /// Gets the current data volume downloaded formatted as Megabytes (MB) to one decimal place.
+        /// </summary>
+        public string DownloadedMb => (_downloadedBytes / (1024.0 * 1024.0)).ToString("F1");
 
-        public string TotalMb
-        {
-            get => (_totalBytes / (1024.0 * 1024.0)).ToString("F1");
-        }
+        /// <summary>
+        /// Gets the total target file volume formatted as Megabytes (MB) to one decimal place.
+        /// </summary>
+        public string TotalMb => (_totalBytes / (1024.0 * 1024.0)).ToString("F1");
 
+        /// <summary>
+        /// Gets the calculated rolling network ingestion speed string, dynamically choosing human-readable unit formats.
+        /// </summary>
         public string DownloadSpeed
         {
             get
@@ -185,14 +215,18 @@ namespace SyslogHmi.ViewModels
                     return "starting...";
 
                 var bytesPerSecond = _downloadedBytes / elapsed.TotalSeconds;
-                if (bytesPerSecond < 1024)
-                    return $"{bytesPerSecond:F0} B/s";
-                if (bytesPerSecond < 1024 * 1024)
-                    return $"{bytesPerSecond / 1024:F1} KB/s";
-                return $"{bytesPerSecond / (1024 * 1024):F1} MB/s";
+                return bytesPerSecond switch
+                {
+                    < 1024 => $"{bytesPerSecond:F0} B/s",
+                    < 1024 * 1024 => $"{bytesPerSecond / 1024:F1} KB/s",
+                    _ => $"{bytesPerSecond / (1024 * 1024):F1} MB/s"
+                };
             }
         }
 
+        /// <summary>
+        /// Gets the calculated estimated arrival time remaining based on historical transfer rate values.
+        /// </summary>
         public string TimeRemaining
         {
             get
@@ -220,8 +254,10 @@ namespace SyslogHmi.ViewModels
         }
 
         /// <summary>
-        /// Gets the state of a specific model (NotDownloaded, Downloaded, or Loaded).
+        /// Cross-evaluates properties to check if a specific model target is NotDownloaded, Downloaded, or currently Loaded into active memory.
         /// </summary>
+        /// <param name="model">The model item to analyze.</param>
+        /// <returns>The calculated deployment initialization state enumeration matching the target asset entry.</returns>
         public ModelState GetModelState(LlmModel model)
         {
             if (model == null)
@@ -230,12 +266,12 @@ namespace SyslogHmi.ViewModels
             if (LoadedModel?.FileName.Equals(model.FileName, StringComparison.OrdinalIgnoreCase) == true)
                 return ModelState.Loaded;
 
-            if (IsModelDownloaded(model.FileName))
-                return ModelState.Downloaded;
-
-            return ModelState.NotDownloaded;
+            return IsModelDownloaded(model.FileName) ? ModelState.Downloaded : ModelState.NotDownloaded;
         }
 
+        /// <summary>
+        /// Queries the local file catalog asynchronously to find local variations, populating the collection via the UI Thread dispatcher.
+        /// </summary>
         public void LoadModels()
         {
             Task.Run(() =>
@@ -244,6 +280,7 @@ namespace SyslogHmi.ViewModels
                 {
                     var allModels = ModelCatalog.GetAvailableModels();
 
+                    // Marshal collection changes back onto the UI application thread to prevent cross-thread collection exceptions
                     System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
                     {
                         AllModels.Clear();
@@ -252,7 +289,7 @@ namespace SyslogHmi.ViewModels
                             AllModels.Add(model);
                         }
 
-                        // Select first model by default
+                        // Select the first model catalog index option by default if available
                         if (AllModels.Count > 0)
                         {
                             SelectedModel = AllModels[0];
@@ -270,15 +307,21 @@ namespace SyslogHmi.ViewModels
         }
 
         /// <summary>
-        /// Event raised when models have been loaded and AllModels collection is populated.
+        /// Event fired whenever the backend model processing loops complete an inventory population scan sequence.
         /// </summary>
         public event Action ModelsLoaded;
 
+        /// <summary>
+        /// Checks whether a specific model configuration name resides entirely within the local disk space directory cache.
+        /// </summary>
         public bool IsModelDownloaded(string fileName)
         {
             return _modelManager.IsModelCached(fileName);
         }
 
+        /// <summary>
+        /// Pulls down the chosen model file from the remote resource URL using cancellation injection handlers.
+        /// </summary>
         public async Task DownloadSelectedModel()
         {
             if (SelectedModel == null)
@@ -314,6 +357,9 @@ namespace SyslogHmi.ViewModels
             }
         }
 
+        /// <summary>
+        /// Signals cancellation to the current remote file download stream.
+        /// </summary>
         public void CancelDownload()
         {
             _cancellationTokenSource?.Cancel();
@@ -327,6 +373,7 @@ namespace SyslogHmi.ViewModels
             var percent = totalBytes > 0 ? (bytesDownloaded / (double)totalBytes) * 100 : 0;
             DownloadProgressPercent = percent;
 
+            // Dispatch properties recalculation metrics onto the main layout thread to assure real-time UI text rendering
             System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
             {
                 OnPropertyChanged(nameof(DownloadedMb));
@@ -359,8 +406,9 @@ namespace SyslogHmi.ViewModels
             });
         }
 
-        // ViewModelBase already provides OnPropertyChanged and PropertyChanged event.
-        // This method remains for backwards compatibility and will call base.OnPropertyChanged.
+        /// <summary>
+        /// Overrides property changed operations to bridge framework visibility loops safely.
+        /// </summary>
         protected new void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             base.OnPropertyChanged(propertyName);
@@ -368,12 +416,15 @@ namespace SyslogHmi.ViewModels
     }
 
     /// <summary>
-    /// Represents the state of a model.
+    /// Represents the deployment lifecycle storage state of an LLM asset configuration.
     /// </summary>
     public enum ModelState
     {
+        /// <summary>The asset file needs to be retrieved via the network downloader.</summary>
         NotDownloaded,
+        /// <summary>The asset file exists locally on the disk cache layout but is not initialized into active memory.</summary>
         Downloaded,
+        /// <summary>The asset file weights are parsed, processed, and loaded into active VRAM execution contexts.</summary>
         Loaded
     }
 }

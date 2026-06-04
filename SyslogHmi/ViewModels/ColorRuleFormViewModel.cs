@@ -237,7 +237,7 @@ namespace SyslogHmi.ViewModels
                     SeverityFilterEnabled = true;
                     if (int.TryParse(condition.ComparisonValue, out var level))
                     {
-                        if (level >= 0 && level <= 7)
+                        if (level is >= 0 and <= 7)
                             SeverityOptions[level].IsChecked = true;
                     }
                     foreach (var alt in condition.AlternativeValues)
@@ -305,9 +305,7 @@ namespace SyslogHmi.ViewModels
                     Name = RuleName,
                     Format = new ColorFormat(
                         ColorHelper.GetHexFromFriendlyName(SelectedBackgroundColor),
-                        ColorHelper.GetHexFromFriendlyName(SelectedForegroundColor),
-                        false,
-                        false
+                        ColorHelper.GetHexFromFriendlyName(SelectedForegroundColor)
                     )
                 };
             }
@@ -319,9 +317,7 @@ namespace SyslogHmi.ViewModels
                     Name = RuleName,
                     Format = new ColorFormat(
                         ColorHelper.GetHexFromFriendlyName(SelectedBackgroundColor),
-                        ColorHelper.GetHexFromFriendlyName(SelectedForegroundColor),
-                        false,
-                        false
+                        ColorHelper.GetHexFromFriendlyName(SelectedForegroundColor)
                     ),
                     IsActive = true,
                     Priority = 0
@@ -495,27 +491,4 @@ namespace SyslogHmi.ViewModels
             ClearAllFilters();
         }
     }
-
-    public class SeverityCheckItem : ViewModelBase
-    {
-        public int Level
-        {
-            get;
-            set => SetProperty(ref field, value);
-        }
-
-        public string Name
-        {
-            get;
-            set => SetProperty(ref field, value);
-        } = string.Empty;
-
-        public bool IsChecked
-        {
-            get;
-            set => SetProperty(ref field, value);
-        }
-    }
-
-    
 }

@@ -7,7 +7,6 @@
              xmlns:culture="clr-namespace:System.Globalization;assembly=System.Runtime"
              mc:Ignorable="d"
              Background="#F5F6FA" d:DesignWidth="1000" d:DesignHeight="700"
-             xmlns:vm="clr-namespace:SyslogHmi.ViewModels"
              d:DataContext="{d:DesignInstance Type=vm:MainViewModel, IsDesignTimeCreatable=True}">
 
     <UserControl.Resources>

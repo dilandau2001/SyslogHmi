@@ -15,8 +15,8 @@ namespace SyslogHmi.ViewModels
 
         public event EventHandler CanExecuteChanged
         {
-            add { CommandManager.RequerySuggested += value; }
-            remove { CommandManager.RequerySuggested -= value; }
+            add => CommandManager.RequerySuggested += value;
+            remove => CommandManager.RequerySuggested -= value;
         }
 
         public AsyncRelayCommand(Func<Task> execute, Func<bool> canExecute = null)

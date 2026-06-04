@@ -5,14 +5,17 @@ using System.Threading.Tasks;
 
 namespace SyslogHmi.Services
 {
+    /// <summary>
+    /// Service utility that simulates a live system by generating and sending mock Syslog messages.
+    /// Supports both legacy BSD (RFC 3164) and modern IETF (RFC 5424) protocols via UDP.
+    /// </summary>
     public class SyslogMessageSender
     {
         private readonly Random _random = new Random();
 
-        private static readonly string[] Hostnames = ["web-server-01", "db-server-01", "app-server-02", "cache-01", "router-01", "firewall-01"
-        ];
-        private static readonly string[] Applications = ["nginx", "postgresql", "java-app", "redis", "kernel", "sshd", "systemd", "cron", "apache2"
-        ];
+        // Arrays containing pre-defined mock assets for random generation
+        private static readonly string[] Hostnames = ["web-server-01", "db-server-01", "app-server-02", "cache-01", "router-01", "firewall-01"];
+        private static readonly string[] Applications = ["nginx", "postgresql", "java-app", "redis", "kernel", "sshd", "systemd", "cron", "apache2"];
         private static readonly int[] Severities = [0, 1, 2, 3, 4, 5, 6, 7];
         private static readonly int[] Facilities = [0, 1, 2, 3, 4, 5, 6, 7, 16, 17, 18, 19, 20, 21, 22, 23];
 
@@ -36,10 +39,17 @@ namespace SyslogHmi.Services
             "Queue depth increasing"
         ];
 
+        /// <summary>
+        /// Generates a randomized Syslog payload and transmits it immediately over a synchronous UDP socket.
+        /// </summary>
+        /// <param name="host">Target IP address or domain hostname of the Syslog receiver server.</param>
+        /// <param name="port">The target UDP network port (Standard default is 514).</param>
+        /// <param name="useRfc5424">Set to <c>true</c> for standard IETF format; <c>false</c> for legacy BSD format.</param>
         public void SendRandomSyslogMessage(string host = "localhost", int port = 514, bool useRfc5424 = true)
         {
             try
             {
+                // Randomly select assets from our mock arrays
                 var hostname = Hostnames[_random.Next(Hostnames.Length)];
                 var app = Applications[_random.Next(Applications.Length)];
                 var severity = Severities[_random.Next(Severities.Length)];
@@ -47,6 +57,7 @@ namespace SyslogHmi.Services
                 var message = Messages[_random.Next(Messages.Length)];
                 var pid = _random.Next(1000, 65535);
 
+                // Calculate PRI block using the standard protocol formula: (Facility * 8) + Severity
                 var priority = (facility * 8) + severity;
                 string syslogMessage;
 
@@ -82,13 +93,23 @@ namespace SyslogHmi.Services
             }
         }
 
+        /// <summary>
+        /// Asynchronously executes the packet generation loop on a dedicated background thread pool context.
+        /// </summary>
+        /// <param name="host">Target IP address or domain hostname of the Syslog receiver server.</param>
+        /// <param name="port">The target UDP network port.</param>
         public async Task SendRandomSyslogMessageAsync(string host = "localhost", int port = 514)
         {
+            // Offloads the generation tasks onto the thread pool to keep the calling thread (e.g., UI) unblocked
             await Task.Run(() => SendRandomSyslogMessage(host, port));
         }
 
+        /// <summary>
+        /// Opens a transient UDP socket connection to fire the string buffer directly to the target daemon.
+        /// </summary>
         private void SendUdpMessage(string message, string host, int port)
         {
+            // Wrapped in a 'using' statement to ensure the underlying OS socket handle is closed instantly
             using (var udpClient = new UdpClient())
             {
                 var bytes = Encoding.UTF8.GetBytes(message);

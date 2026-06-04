@@ -1,13 +1,13 @@
-﻿namespace SyslogHmi.ViewModels
+namespace SyslogHmi.ViewModels
 {
     /// <summary>
     /// Represents an individual item in a checkable selection list within the user interface.
-    /// Primarily used in the UI sidebar to dynamically filter incoming Syslog streams by their Facility value.
+    /// Used in the dashboard filter configuration panels to dynamically filter incoming Syslog streams by their Severity level.
     /// </summary>
-    public class FacilityCheckItem : ViewModelBase
+    public class SeverityCheckItem : ViewModelBase
     {
         /// <summary>
-        /// Gets or sets the numerical value corresponding to the standard Syslog facility level (e.g., 0 for Kern, 1 for User, 16-23 for Local Use).
+        /// Gets or sets the numerical value corresponding to the standard Syslog severity level (Range: 0 for Emergency down to 7 for Debug).
         /// </summary>
         public int Level
         {
@@ -16,7 +16,7 @@
         }
 
         /// <summary>
-        /// Gets or sets the human-readable display name of the facility category (e.g., "auth", "cron", "local0").
+        /// Gets or sets the human-readable display name of the severity category (e.g., "Emergency", "Error", "Debug").
         /// </summary>
         public string Name
         {
@@ -25,7 +25,7 @@
         } = string.Empty;
 
         /// <summary>
-        /// Gets or sets a value indicating whether this specific facility group should be displayed on the HMI dashboard.
+        /// Gets or sets a value indicating whether logs belonging to this specific severity classification should be visible on the display layout.
         /// Changes to this property immediately trigger UI data binding updates.
         /// </summary>
         public bool IsChecked

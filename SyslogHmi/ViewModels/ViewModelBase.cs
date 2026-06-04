@@ -26,11 +26,11 @@ namespace SyslogHmi.ViewModels
         /// </summary>
         protected void SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = "")
         {
-            if (!Equals(field, value))
-            {
-                field = value;
-                OnPropertyChanged(propertyName);
-            }
+            if (Equals(field, value))
+                return;
+            
+            field = value;
+            OnPropertyChanged(propertyName);
         }
     }
 }

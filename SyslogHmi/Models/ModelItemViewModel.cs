@@ -30,7 +30,7 @@ namespace SyslogHmi.Models
                 if (_state != value)
                 {
                     _state = value;
-                    OnPropertyChanged(nameof(State));
+                    OnPropertyChanged();
                     OnPropertyChanged(nameof(IsNotLoaded));
                     OnPropertyChanged(nameof(IsLoaded));
                     OnPropertyChanged(nameof(BackgroundColor));
@@ -46,7 +46,7 @@ namespace SyslogHmi.Models
                 if (_isLoading != value)
                 {
                     _isLoading = value;
-                    OnPropertyChanged(nameof(IsLoading));
+                    OnPropertyChanged();
                     OnPropertyChanged(nameof(CanPerformAction));
                 }
             }
@@ -60,7 +60,7 @@ namespace SyslogHmi.Models
                 if (_statusMessage != value)
                 {
                     _statusMessage = value;
-                    OnPropertyChanged(nameof(StatusMessage));
+                    OnPropertyChanged();
                 }
             }
         }

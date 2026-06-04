@@ -7,22 +7,29 @@ using System.ComponentModel;
 namespace SyslogHmi.ViewModels
 {
     /// <summary>
-    /// Una ObservableCollection optimizada que permite añadir o insertar rangos de elementos
-    /// notificando a la interfaz de usuario una sola vez al final.
+    /// An optimized <see cref="ObservableCollection{T}"/> that allows prepending or removing ranges of items
+    /// while notifying the user interface (UI) only once at the very end of the transaction.
     /// </summary>
     public class BulkObservableCollection<T> : ObservableCollection<T>
     {
-        private bool _suppressNotification = false;
+        // Flag used to temporarily mute data binding updates during intense data modifications
+        private bool _suppressNotification;
 
+        /// <summary>
+        /// Raises the <see cref="ObservableCollection{T}.CollectionChanged"/> event.
+        /// </summary>
         protected override void OnCollectionChanged(NotifyCollectionChangedEventArgs e)
         {
-            // Si la notificación está suprimida, no le avisamos a WPF todavía
+            // If notification is actively suppressed, do not inform WPF/UI frameworks yet
             if (!_suppressNotification)
             {
                 base.OnCollectionChanged(e);
             }
         }
 
+        /// <summary>
+        /// Raises the <see cref="ObservableCollection{T}.PropertyChanged"/> event.
+        /// </summary>
         protected override void OnPropertyChanged(PropertyChangedEventArgs e)
         {
             if (!_suppressNotification)
@@ -32,9 +39,10 @@ namespace SyslogHmi.ViewModels
         }
 
         /// <summary>
-        /// Inserta un rango de elementos al principio (Índice 0) de golpe, 
-        /// disparando un único evento de refresco visual.
+        /// Inserts a range of elements at the absolute beginning (Index 0) of the collection all at once,
+        /// triggering a single unified visual refresh event.
         /// </summary>
+        /// <param name="collection">The batch of items to prepend to the list.</param>
         public void PrependRange(IEnumerable<T> collection)
         {
             if (collection == null) throw new ArgumentNullException(nameof(collection));
@@ -42,8 +50,8 @@ namespace SyslogHmi.ViewModels
             _suppressNotification = true;
             try
             {
-                // Para mantener el orden cronológico invertido (los más nuevos primero),
-                // recorremos el lote de atrás hacia adelante al insertar en el índice 0
+                // To maintain reversed chronological order (newest items appearing at the top),
+                // we iterate through the incoming batch from back to front while inserting at index 0.
                 var list = new List<T>(collection);
                 for (var i = list.Count - 1; i >= 0; i--)
                 {
@@ -52,8 +60,10 @@ namespace SyslogHmi.ViewModels
             }
             finally
             {
+                // Unmute notifications inside a finally block to guarantee execution if an error occurs
                 _suppressNotification = false;
-                // Le avisamos a WPF que la lista cambió por completo para que se redibuje
+
+                // Notify WPF that the list structure has changed completely so it forces a single redraw pass
                 OnPropertyChanged(new PropertyChangedEventArgs("Count"));
                 OnPropertyChanged(new PropertyChangedEventArgs("Item[]"));
                 OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
@@ -61,8 +71,9 @@ namespace SyslogHmi.ViewModels
         }
 
         /// <summary>
-        /// Elimina un rango de elementos desde el final de la lista de golpe.
+        /// Removes a specific quantity of items from the tail end of the collection all at once.
         /// </summary>
+        /// <param name="countToRemove">The exact number of old log entries to delete from the bottom.</param>
         public void RemoveFromEnd(int countToRemove)
         {
             if (countToRemove <= 0) return;
@@ -81,6 +92,8 @@ namespace SyslogHmi.ViewModels
             finally
             {
                 _suppressNotification = false;
+
+                // Signal a total layout reset to clean up trailing elements on screen simultaneously
                 OnPropertyChanged(new PropertyChangedEventArgs("Count"));
                 OnPropertyChanged(new PropertyChangedEventArgs("Item[]"));
                 OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
