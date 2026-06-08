@@ -1,16 +1,14 @@
-name: .NET Core Desktop
+name: .NET 10 Windows Build & Release
 
 on:
   push:
-    branches: [ "master" ]
-  pull_request:
     branches: [ "master" ]
 
 jobs:
   build:
     strategy:
       matrix:
-        configuration: [Debug, Release]
+        configuration: [Release] # Changed to Release only for production delivery
 
     runs-on: windows-latest  
 
@@ -24,32 +22,40 @@ jobs:
       with:
         fetch-depth: 0
 
-    # Configura el entorno e instala el SDK de .NET 10
     - name: Setup .NET 10
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '10.0.x'
 
-    # Configura MSBuild en el sistema
-    - name: Setup MSBuild.exe
-      uses: microsoft/setup-msbuild@v2
+    - name: Restore dependencies
+      run: dotnet restore ${{ env.Solution_Name }}
 
-    # Ejecuta las pruebas unitarias automáticamente
     - name: Execute unit tests
-      run: dotnet test ${{ env.Test_Project_Path }} --configuration ${{ matrix.configuration }}
+      run: dotnet test ${{ env.Test_Project_Path }} --configuration ${{ matrix.configuration }} --no-restore
 
-    # Restaura las dependencias de NuGet
-    - name: Restore the application
-      run: msbuild ${{ env.Solution_Name }} /t:Restore /p:Configuration=${{ matrix.configuration }}
+    # Optimized for Release: Publishes the app into a clean, single zip-ready folder
+    - name: Publish Application
+      run: dotnet publish ${{ env.Solution_Name }} --configuration ${{ matrix.configuration }} --output ./publish_output --no-restore
 
-    # Compila la solución completa (Genera los archivos .exe y .dll)
-    - name: Build the application
-      run: msbuild ${{ env.Solution_Name }} /p:Configuration=${{ matrix.configuration }}
+    # Compresses the published folder into a single ZIP file for clean downloading
+    - name: Create Zip Archive
+      shell: pwsh
+      run: Compress-Archive -Path ./publish_output/* -DestinationPath ./SyslogHmi_v1.0.0.zip
 
-    # Guarda los archivos resultantes como artefactos de GitHub
+    # Uploads the zip as an internal GitHub Artifact (Good for backup)
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: Application-Binaries-${{ matrix.configuration }}
-        path: |
-          **/bin/${{ matrix.configuration }}/
+        name: Application-Package
+        path: ./SyslogHmi_v1.0.0.zip
+
+    # Automatically creates the formal GitHub Release and attaches the ZIP
+    - name: Create GitHub Release
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Provided automatically by GitHub Actions
+      shell: pwsh
+      run: |
+        gh release create v1.0.0 ./SyslogHmi_v1.0.0.zip `
+          --title "Version 1.0.0 (Initial Release)" `
+          --notes "First official release of SyslogHmi built on .NET 10." `
+          --target master
