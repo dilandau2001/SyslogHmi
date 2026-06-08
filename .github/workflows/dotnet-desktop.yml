@@ -1,0 +1,55 @@
+name: .NET Core Desktop
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        configuration: [Debug, Release]
+
+    runs-on: windows-latest  
+
+    env:
+      Solution_Name: SyslogHmi.sln                              
+      Test_Project_Path: SyslogHmiTests/SyslogHmiTests.csproj   
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    # Configura el entorno e instala el SDK de .NET 10
+    - name: Setup .NET 10
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    # Configura MSBuild en el sistema
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v2
+
+    # Ejecuta las pruebas unitarias automáticamente
+    - name: Execute unit tests
+      run: dotnet test ${{ env.Test_Project_Path }} --configuration ${{ matrix.configuration }}
+
+    # Restaura las dependencias de NuGet
+    - name: Restore the application
+      run: msbuild ${{ env.Solution_Name }} /t:Restore /p:Configuration=${{ matrix.configuration }}
+
+    # Compila la solución completa (Genera los archivos .exe y .dll)
+    - name: Build the application
+      run: msbuild ${{ env.Solution_Name }} /p:Configuration=${{ matrix.configuration }}
+
+    # Guarda los archivos resultantes como artefactos de GitHub
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: Application-Binaries-${{ matrix.configuration }}
+        path: |
+          **/bin/${{ matrix.configuration }}/
