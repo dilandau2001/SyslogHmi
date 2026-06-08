@@ -4,11 +4,15 @@ on:
   push:
     branches: [ "master" ]
 
+# Otorga explícitamente permisos de escritura para que el script pueda crear la Release sin errores
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
       matrix:
-        configuration: [Release] # Changed to Release only for production delivery
+        configuration: [Release] # Solo Release para producción
 
     runs-on: windows-latest  
 
@@ -27,32 +31,31 @@ jobs:
       with:
         dotnet-version: '10.0.x'
 
+    # 1. Descarga todas las dependencias necesarias de NuGet
     - name: Restore dependencies
       run: dotnet restore ${{ env.Solution_Name }}
 
+    # 2. Compila la solución completa de una sola vez
+    - name: Build Solution
+      run: dotnet build ${{ env.Solution_Name }} --configuration ${{ matrix.configuration }} --no-restore
+
+    # 3. Ejecuta los tests usando lo que ya se compiló en el paso anterior (--no-build)
     - name: Execute unit tests
-      run: dotnet test ${{ env.Test_Project_Path }} --configuration ${{ matrix.configuration }} --no-restore
+      run: dotnet test ${{ env.Test_Project_Path }} --configuration ${{ matrix.configuration }} --no-build
 
-    # Optimized for Release: Publishes the app into a clean, single zip-ready folder
+    # 4. Publica la aplicación limpia usando la compilación previa (--no-build)
     - name: Publish Application
-      run: dotnet publish ${{ env.Solution_Name }} --configuration ${{ matrix.configuration }} --output ./publish_output --no-restore
+      run: dotnet publish ${{ env.Solution_Name }} --configuration ${{ matrix.configuration }} --output ./publish_output --no-build
 
-    # Compresses the published folder into a single ZIP file for clean downloading
+    # 5. Empaqueta el resultado en un archivo ZIP
     - name: Create Zip Archive
       shell: pwsh
       run: Compress-Archive -Path ./publish_output/* -DestinationPath ./SyslogHmi_v1.0.0.zip
 
-    # Uploads the zip as an internal GitHub Artifact (Good for backup)
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: Application-Package
-        path: ./SyslogHmi_v1.0.0.zip
-
-    # Automatically creates the formal GitHub Release and attaches the ZIP
+    # 6. Publica en la sección de Releases de GitHub de forma automática
     - name: Create GitHub Release
       env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Provided automatically by GitHub Actions
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       shell: pwsh
       run: |
         gh release create v1.0.0 ./SyslogHmi_v1.0.0.zip `
