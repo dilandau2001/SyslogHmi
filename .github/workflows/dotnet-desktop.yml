@@ -18,7 +18,8 @@ jobs:
 
     env:
       Solution_Name: SyslogHmi.sln                              
-      Test_Project_Path: SyslogHmiTests/SyslogHmiTests.csproj   
+      Test_Project_Path: SyslogHmiTests/SyslogHmiTests.csproj
+      Main_Project_Path: SyslogHmi/SyslogHmi.csproj
 
     steps:
     - name: Checkout
@@ -45,7 +46,7 @@ jobs:
 
     # 4. Publica la aplicación limpia usando la compilación previa (--no-build)
     - name: Publish Application
-      run: dotnet publish ${{ env.Solution_Name }} --configuration ${{ matrix.configuration }} --output ./publish_output --no-build
+      run: dotnet publish ${{ env.Main_Project_Path }} --configuration ${{ matrix.configuration }} --output ./publish_output --no-build
 
     # 5. Empaqueta el resultado en un archivo ZIP
     - name: Create Zip Archive
